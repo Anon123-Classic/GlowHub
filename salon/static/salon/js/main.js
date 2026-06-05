@@ -20,6 +20,7 @@ function initBookingFlow() {
     var timeInput = document.getElementById('id_time');
     var loadingEl = document.getElementById('slots-loading');
     var bookForm = document.getElementById('booking-form');
+    var serviceSelect = document.getElementById('id_service');
 
     if (!dateInput || !timeContainer) return;
 
@@ -31,7 +32,13 @@ function initBookingFlow() {
         timeContainer.innerHTML = '';
         if (timeInput) timeInput.value = '';
 
-        fetch(slotsUrl + '?date=' + date)
+        var params = new URLSearchParams({date: date});
+        var serviceId = serviceSelect ? serviceSelect.value : (bookForm ? bookForm.dataset.serviceId : '');
+        var appointmentId = bookForm ? bookForm.dataset.appointmentId : '';
+        if (serviceId) params.set('service', serviceId);
+        if (appointmentId) params.set('appointment', appointmentId);
+
+        fetch(slotsUrl + '?' + params.toString())
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (loadingEl) loadingEl.style.display = 'none';
@@ -82,9 +89,11 @@ function initBookingFlow() {
 
     updateServiceSummary();
 
-    var serviceSelect = document.getElementById('id_service');
     if (serviceSelect) {
-        serviceSelect.addEventListener('change', updateServiceSummary);
+        serviceSelect.addEventListener('change', function() {
+            updateServiceSummary();
+            if (dateInput.value) fetchSlots(dateInput.value);
+        });
     }
 
     if (bookForm) {

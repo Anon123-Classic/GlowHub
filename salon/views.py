@@ -188,6 +188,8 @@ def book_appointment(request):
 @login_required
 def get_slots(request):
     date_str = request.GET.get('date')
+    service_id = request.GET.get('service')
+    appointment_id = request.GET.get('appointment')
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except (ValueError, TypeError):
@@ -196,12 +198,26 @@ def get_slots(request):
     if selected_date < timezone.now().date():
         return JsonResponse({'slots': []})
 
+    service = None
+    if service_id:
+        try:
+            service = Service.objects.get(pk=service_id, is_active=True)
+        except Service.DoesNotExist:
+            service = None
+
+    try:
+        exclude_appointment_id = int(appointment_id) if appointment_id else None
+    except (TypeError, ValueError):
+        exclude_appointment_id = None
+
+    slots = get_available_slots(
+        selected_date,
+        service=service,
+        exclude_appointment_id=exclude_appointment_id
+    )
     if selected_date == timezone.now().date():
         now = timezone.now()
-        slots = get_available_slots(selected_date)
         slots = [s for s in slots if s['time'] > now.strftime('%H:%M')]
-    else:
-        slots = get_available_slots(selected_date)
 
     return JsonResponse({'slots': slots})
 

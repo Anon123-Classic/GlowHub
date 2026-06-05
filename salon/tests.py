@@ -3,10 +3,12 @@ from datetime import time, timedelta
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from .forms import AppointmentForm, RescheduleForm
 from .models import Appointment, Service
+from .utils import get_available_slots
 
 
 class BookingDurationValidationTests(TestCase):
@@ -169,3 +171,80 @@ class BookingDurationValidationTests(TestCase):
 
         with self.assertRaisesMessage(ValidationError, 'This time slot is already booked.'):
             appointment.clean()
+
+
+    def test_available_slots_hide_duration_overlaps_for_selected_service(self):
+        Appointment.objects.create(
+            user=self.user,
+            service=self.long_service,
+            date=self.booking_date,
+            time=time(9, 0),
+            status='approved',
+        )
+
+        slots = get_available_slots(self.booking_date, service=self.short_service)
+        availability = {slot['time']: slot['available'] for slot in slots}
+
+        self.assertFalse(availability['09:00'])
+        self.assertFalse(availability['09:30'])
+        self.assertFalse(availability['10:00'])
+        self.assertFalse(availability['10:30'])
+        self.assertTrue(availability['11:00'])
+
+    def test_available_slots_prevent_candidate_service_from_running_into_existing_booking(self):
+        Appointment.objects.create(
+            user=self.user,
+            service=self.short_service,
+            date=self.booking_date,
+            time=time(10, 0),
+            status='approved',
+        )
+
+        slots = get_available_slots(self.booking_date, service=self.long_service)
+        availability = {slot['time']: slot['available'] for slot in slots}
+
+        self.assertFalse(availability['09:00'])
+        self.assertFalse(availability['09:30'])
+        self.assertFalse(availability['10:00'])
+        self.assertTrue(availability['10:30'])
+
+    def test_get_slots_endpoint_uses_selected_service_duration(self):
+        self.client.force_login(self.user)
+        Appointment.objects.create(
+            user=self.other_user,
+            service=self.long_service,
+            date=self.booking_date,
+            time=time(9, 0),
+            status='approved',
+        )
+
+        response = self.client.get(reverse('get_slots'), {
+            'date': self.booking_date.isoformat(),
+            'service': self.short_service.pk,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        availability = {slot['time']: slot['available'] for slot in response.json()['slots']}
+        self.assertFalse(availability['09:30'])
+        self.assertFalse(availability['10:00'])
+        self.assertTrue(availability['11:00'])
+
+    def test_get_slots_endpoint_can_exclude_rescheduled_appointment(self):
+        self.client.force_login(self.user)
+        appointment = Appointment.objects.create(
+            user=self.user,
+            service=self.short_service,
+            date=self.booking_date,
+            time=time(9, 0),
+            status='approved',
+        )
+
+        response = self.client.get(reverse('get_slots'), {
+            'date': self.booking_date.isoformat(),
+            'service': self.short_service.pk,
+            'appointment': appointment.pk,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        availability = {slot['time']: slot['available'] for slot in response.json()['slots']}
+        self.assertTrue(availability['09:00'])

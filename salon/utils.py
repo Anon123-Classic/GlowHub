@@ -227,24 +227,36 @@ GlowHub Management
         logger.error(f"Failed to send staff invite email to {user.email}: {e}")
 
 
-def get_available_slots(service_date):
+def get_available_slots(service_date, service=None, exclude_appointment_id=None):
     from datetime import time, timedelta, datetime
     from .models import Appointment, BlockedTimeSlot
 
-    start = datetime.combine(service_date, time(9, 0))
-    end = datetime.combine(service_date, time(19, 0))
+    start = datetime.combine(service_date, Appointment.BUSINESS_START)
+    end = datetime.combine(service_date, Appointment.BUSINESS_END)
     slots = []
     current = start
 
     booked = Appointment.objects.filter(
-        date=service_date, status__in=['pending', 'approved', 'in_progress']
-    ).values_list('time', flat=True)
+        date=service_date, status__in=Appointment.ACTIVE_BOOKING_STATUSES
+    )
+    if exclude_appointment_id:
+        booked = booked.exclude(pk=exclude_appointment_id)
+    booked_times = booked.values_list('time', flat=True)
 
     blocked = BlockedTimeSlot.objects.filter(date=service_date)
 
     while current < end:
         t = current.time()
-        is_booked = t in booked
+        if service:
+            _, slot_end = Appointment.get_interval(service_date, t, service)
+            is_booked = (
+                slot_end > end or
+                Appointment.conflicts_with_existing(
+                    service_date, t, service, exclude_pk=exclude_appointment_id
+                )
+            )
+        else:
+            is_booked = t in booked_times
         is_blocked = any(
             b.start_time <= t < b.end_time for b in blocked
         )
