@@ -2,7 +2,7 @@ from datetime import time, timedelta
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -401,3 +401,68 @@ class AdminStaffAssignmentValidationTests(TestCase):
         appointment.refresh_from_db()
         self.assertIsNone(appointment.assigned_staff)
         self.assertIsNone(appointment.staff)
+
+class WalkInStaffAssignmentTests(TestCase):
+    def setUp(self):
+        self.cashier = User.objects.create_user(
+            username='walkin_cashier',
+            email='cashier@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        self.staff_user = User.objects.create_user(
+            username='walkin_staff',
+            email='walkinstaff@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        self.staff = Staff.objects.create(
+            user=self.staff_user,
+            role='hair_stylist',
+            availability='available',
+        )
+        self.service = Service.objects.create(
+            name='Walk-in Hair Service',
+            description='Walk-in service',
+            price=1500,
+            duration=30,
+            category='hair',
+            is_active=True,
+        )
+
+    def create_walkin(self):
+        self.client.force_login(self.cashier)
+        return self.client.post(reverse('cashier_walkin'), {
+            'customer_name': 'Walk In Customer',
+            'customer_phone': '',
+            'customer_email': 'walkin@example.com',
+            'service': self.service.pk,
+            'staff': self.staff.pk,
+        })
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_walkin_sets_assigned_staff_and_legacy_staff(self):
+        response = self.create_walkin()
+
+        self.assertEqual(response.status_code, 302)
+        appointment = Appointment.objects.get(service=self.service)
+        self.assertEqual(appointment.staff, self.staff.user)
+        self.assertEqual(appointment.assigned_staff, self.staff)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_walkin_appears_in_staff_completed_statistics(self):
+        response = self.create_walkin()
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.staff.get_completed_appointments(), 1)
+        self.assertEqual(self.staff.get_total_appointments(), 1)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_walkin_is_not_counted_as_unassigned_when_staff_selected(self):
+        response = self.create_walkin()
+
+        self.assertEqual(response.status_code, 302)
+        unassigned_count = Appointment.objects.filter(
+            assigned_staff__isnull=True
+        ).exclude(status='cancelled').count()
+        self.assertEqual(unassigned_count, 0)

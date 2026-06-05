@@ -910,8 +910,9 @@ def cashier_walkin(request):
             )
             
             if staff_member:
+                appointment.assigned_staff = staff_member
                 appointment.staff = staff_member.user
-                appointment.save()
+                appointment.save(update_fields=['assigned_staff', 'staff'])
             
             payment = Payment.objects.create(
                 appointment=appointment,
