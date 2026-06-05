@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import AppointmentForm, RescheduleForm
-from .models import Appointment, Service
+from .models import Appointment, Service, Staff
 from .utils import get_available_slots
 
 
@@ -248,3 +248,156 @@ class BookingDurationValidationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         availability = {slot['time']: slot['available'] for slot in response.json()['slots']}
         self.assertTrue(availability['09:00'])
+
+class AdminStaffAssignmentValidationTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='admin',
+            email='admin@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        self.customer = User.objects.create_user(
+            username='booking_customer',
+            email='booking@example.com',
+            password='password123',
+        )
+        self.other_customer = User.objects.create_user(
+            username='other_booking_customer',
+            email='otherbooking@example.com',
+            password='password123',
+        )
+        self.hair_service = Service.objects.create(
+            name='Hair Styling',
+            description='Hair service',
+            price=2000,
+            duration=60,
+            category='hair',
+            is_active=True,
+        )
+        self.short_hair_service = Service.objects.create(
+            name='Short Hair Service',
+            description='Short hair service',
+            price=1000,
+            duration=30,
+            category='hair',
+            is_active=True,
+        )
+        self.booking_date = timezone.now().date() + timedelta(days=1)
+        self.hair_staff_user = User.objects.create_user(
+            username='hair_staff',
+            email='hairstaff@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        self.hair_staff = Staff.objects.create(
+            user=self.hair_staff_user,
+            role='hair_stylist',
+            availability='available',
+        )
+
+    def make_appointment(self, service=None, appointment_time=time(9, 0), user=None, status='approved'):
+        return Appointment.objects.create(
+            user=user or self.customer,
+            service=service or self.hair_service,
+            date=self.booking_date,
+            time=appointment_time,
+            status=status,
+        )
+
+    def test_admin_cannot_assign_unavailable_staff(self):
+        appointment = self.make_appointment()
+        self.hair_staff.availability = 'unavailable'
+        self.hair_staff.save()
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse('assign_staff', args=[appointment.pk]), {
+            'staff_id': self.hair_staff.pk,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        appointment.refresh_from_db()
+        self.assertIsNone(appointment.assigned_staff)
+        self.assertIsNone(appointment.staff)
+
+    def test_admin_cannot_assign_wrong_role_for_service_category(self):
+        appointment = self.make_appointment()
+        barber_user = User.objects.create_user(
+            username='barber_staff',
+            email='barber@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        barber = Staff.objects.create(
+            user=barber_user,
+            role='barber',
+            availability='available',
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse('assign_staff', args=[appointment.pk]), {
+            'staff_id': barber.pk,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        appointment.refresh_from_db()
+        self.assertIsNone(appointment.assigned_staff)
+        self.assertIsNone(appointment.staff)
+
+    def test_admin_cannot_double_book_same_staff_with_overlapping_appointments(self):
+        existing = self.make_appointment(appointment_time=time(9, 0), user=self.customer)
+        existing.assigned_staff = self.hair_staff
+        existing.staff = self.hair_staff.user
+        existing.save()
+        overlapping = self.make_appointment(appointment_time=time(9, 30), user=self.other_customer)
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse('assign_staff', args=[overlapping.pk]), {
+            'staff_id': self.hair_staff.pk,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        overlapping.refresh_from_db()
+        self.assertIsNone(overlapping.assigned_staff)
+        self.assertIsNone(overlapping.staff)
+
+    def test_admin_can_assign_same_staff_to_back_to_back_appointments(self):
+        existing = self.make_appointment(
+            service=self.short_hair_service,
+            appointment_time=time(9, 0),
+            user=self.customer,
+        )
+        existing.assigned_staff = self.hair_staff
+        existing.staff = self.hair_staff.user
+        existing.save()
+        next_appointment = self.make_appointment(
+            service=self.short_hair_service,
+            appointment_time=time(9, 30),
+            user=self.other_customer,
+        )
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse('assign_staff', args=[next_appointment.pk]), {
+            'staff_id': self.hair_staff.pk,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        next_appointment.refresh_from_db()
+        self.assertEqual(next_appointment.assigned_staff, self.hair_staff)
+        self.assertEqual(next_appointment.staff, self.hair_staff.user)
+
+    def test_admin_can_unassign_staff(self):
+        appointment = self.make_appointment()
+        appointment.assigned_staff = self.hair_staff
+        appointment.staff = self.hair_staff.user
+        appointment.save()
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse('assign_staff', args=[appointment.pk]), {
+            'staff_id': '',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        appointment.refresh_from_db()
+        self.assertIsNone(appointment.assigned_staff)
+        self.assertIsNone(appointment.staff)

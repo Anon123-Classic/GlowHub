@@ -475,6 +475,33 @@ def assign_staff(request, pk):
         staff_id = request.POST.get('staff_id')
         if staff_id:
             staff_member = get_object_or_404(Staff, id=staff_id)
+            service_category = appointment.service.category if appointment.service else None
+            allowed_roles = [role for role, cat in Staff.SERVICE_CATEGORY_MAP.items() if cat == service_category]
+
+            if staff_member.availability != 'available':
+                messages.error(request, 'Selected staff member is not available.')
+                return redirect('admin_bookings')
+            if allowed_roles and staff_member.role not in allowed_roles:
+                messages.error(request, 'Selected staff member does not match this service category.')
+                return redirect('admin_bookings')
+
+            appointment_start, appointment_end = Appointment.get_interval(
+                appointment.date, appointment.time, appointment.service
+            )
+            assigned_appointments = Appointment.objects.filter(
+                assigned_staff=staff_member,
+                date=appointment.date,
+                status__in=Appointment.ACTIVE_BOOKING_STATUSES,
+            ).exclude(pk=appointment.pk).select_related('service')
+            for assigned in assigned_appointments:
+                assigned_start, assigned_end = Appointment.get_interval(
+                    assigned.date, assigned.time, assigned.service
+                )
+                if appointment_start and appointment_end and assigned_start and assigned_end:
+                    if appointment_start < assigned_end and appointment_end > assigned_start:
+                        messages.error(request, 'Selected staff member is already booked at this time.')
+                        return redirect('admin_bookings')
+
             appointment.assigned_staff = staff_member
             appointment.staff = staff_member.user
             appointment.save()
