@@ -1,0 +1,52 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+{% load form_helpers %}
+{% block title %}Reschedule - GlowHub{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="section-title d-inline-block">Reschedule Appointment</h2>
+        <p class="text-muted mt-3">{{ appointment.service.name }} on {{ appointment.date|date:"M d, Y" }} at {{ appointment.time|time:"g:i A" }}</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="post" id="booking-form" novalidate class="needs-validation">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">New Date</label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                            <div class="invalid-feedback d-block">{{ form.date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">New Time</label>
+                            <div id="slots-loading" class="text-center py-3" style="display:none;">
+                                <span class="loading-spinner"></span>
+                            </div>
+                            <div id="time-slots-container" class="row g-2"></div>
+                            {{ form.time }}
+                            {% if form.time.errors %}
+                            <div class="invalid-feedback d-block">{{ form.time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-purple w-100">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Confirm Reschedule
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

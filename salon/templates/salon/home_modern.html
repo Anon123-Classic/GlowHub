@@ -1,0 +1,256 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+
+{% block title %}GlowHub - Premium Beauty & Salon Booking Platform{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero-section" style="margin-top: 70px;">
+    <div class="container-fluid position-relative z-2">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-content">
+                <h1 class="hero-title animate-fade-in-up">
+                    Your Premium Beauty Destination
+                </h1>
+                <p class="hero-subtitle animate-fade-in-up" style="animation-delay: 0.1s;">
+                    Book expert beauty services with Kenya's most innovative salon platform. Professional hairstylists, makeup artists, and beauty specialists at your fingertips.
+                </p>
+                <div class="animate-fade-in-up" style="animation-delay: 0.2s;">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'book_appointment' %}" class="btn-hero">
+                        Book Now
+                    </a>
+                    <a href="{% url 'services' %}" class="btn-hero btn-hero-secondary">
+                        View Services
+                    </a>
+                    {% else %}
+                    <a href="{% url 'register' %}" class="btn-hero">
+                        Get Started Free
+                    </a>
+                    <a href="{% url 'services' %}" class="btn-hero btn-hero-secondary">
+                        Explore Services
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 text-center d-none d-lg-block">
+                <div class="hero-animation" style="font-size: 8rem; color: rgba(255,255,255,0.2);">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Services Section -->
+<section class="py-5" style="background: white;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="text-gradient fw-bold" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px;">
+                Featured Services
+            </span>
+            <h2 class="fw-bold mt-3">Our Most Popular Services</h2>
+            <p class="text-muted mt-2 fs-5">Trending beauty and wellness treatments loved by our customers</p>
+        </div>
+
+        <div class="row g-4">
+            {% for service in services|slice:":6" %}
+            <div class="col-md-6 col-lg-4">
+                <div class="service-card animate-fade-in-up" style="animation-delay: {{ forloop.counter0|add:"0" }}s;">
+                    {% if service.category == 'hair' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #DDD6FE 0%, #EDE9FE 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'makeup' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #FED7AA 0%, #FECACA 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'nails' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #F9A8D4 0%, #F472B6 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'spa' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #A7F3D0 0%, #6EE7B7 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="service-image">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if forloop.first %}
+                    <span class="service-badge-popular">
+                        Most Booked
+                    </span>
+                    {% endif %}
+
+                    <div class="service-body">
+                        <span class="service-category">{{ service.get_category_display }}</span>
+                        <h5 class="service-name">{{ service.name }}</h5>
+                        <p class="service-description">{{ service.description|truncatewords:15 }}</p>
+
+                        <div class="service-rating">
+                            <span class="star"></span>
+                            <span class="star"></span>
+                            <span class="star"></span>
+                            <span class="star"></span>
+                            <span class="star"></span>
+                            <span class="rating-text">({{ service.appointments.count }} bookings)</span>
+                        </div>
+
+                        <div class="service-meta">
+                            <span class="badge-price">KES {{ service.price }}</span>
+                            <span class="badge-duration">{{ service.duration }} min</span>
+                        </div>
+
+                        <a href="{% url 'service_detail' service.id %}" class="btn-book">
+                            Learn More
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="{% url 'services' %}" class="btn-primary-modern">
+                View All Services
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #F5F3FF 0%, #FAF5FF 100%);">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="text-gradient fw-bold" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px;">
+                Testimonials
+            </span>
+            <h2 class="fw-bold mt-3">What Our Customers Say</h2>
+            <p class="text-muted mt-2 fs-5">Join thousands of satisfied beauty enthusiasts</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="glass-card animate-fade-in-up">
+                    <div class="d-flex gap-2 mb-3">
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                    </div>
+                    <p class="mb-3">"GlowHub made booking my appointments so easy! The professionals are amazing and I love the seamless experience."</p>
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #7C3AED, #A855F7);"></div>
+                        <div>
+                            <strong>Sarah Kipchoge</strong>
+                            <br><small class="text-muted">Nairobi, Kenya</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="glass-card animate-fade-in-up" style="animation-delay: 0.1s;">
+                    <div class="d-flex gap-2 mb-3">
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                    </div>
+                    <p class="mb-3">"Perfect platform for finding the best beauty services. The booking system is intuitive and customer service is top-notch!"</p>
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #A7F3D0, #6EE7B7);"></div>
+                        <div>
+                            <strong>Amina Okafor</strong>
+                            <br><small class="text-muted">Mombasa, Kenya</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="glass-card animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="d-flex gap-2 mb-3">
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                        <span class="star"></span>
+                    </div>
+                    <p class="mb-3">"Best salon booking app in Kenya! I've tried others but GlowHub's interface and service quality is unmatched."</p>
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #F9A8D4, #F472B6);"></div>
+                        <div>
+                            <strong>Kamau Kariuki</strong>
+                            <br><small class="text-muted">Kisumu, Kenya</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%); color: white;">
+    <div class="container text-center">
+        <h2 class="fw-bold mb-3">Ready to Transform Your Beauty Routine?</h2>
+        <p class="fs-5 mb-4 opacity-90">Join thousands of satisfied customers booking their perfect beauty services with GlowHub.</p>
+        {% if user.is_authenticated %}
+        <a href="{% url 'book_appointment' %}" class="btn-hero">
+            Book Your First Appointment
+        </a>
+        {% else %}
+        <a href="{% url 'register' %}" class="btn-hero">
+            Get Started - It's Free!
+        </a>
+        <a href="{% url 'login' %}" class="btn-hero btn-hero-secondary ms-2">
+            Sign In
+        </a>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+    // Smooth scroll animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const elements = document.querySelectorAll('.animate-fade-in-up');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        elements.forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(el);
+        });
+    });
+</script>
+
+{% endblock %}

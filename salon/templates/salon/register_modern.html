@@ -1,0 +1,188 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+
+{% block title %}Sign Up - GlowHub{% endblock %}
+
+{% block content %}
+
+<div style="padding-top: 80px; background: linear-gradient(135deg, #F5F3FF 0%, #FAF5FF 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="animate-fade-in-up">
+                    <!-- Glass Card -->
+                    <div class="glass-card" style="border-radius: 20px; padding: 2.5rem; box-shadow: 0 20px 60px rgba(124, 58, 237, 0.15);">
+                        <!-- Header -->
+                        <div class="text-center mb-3">
+                            <div style="width: 60px; height: 60px; border-radius: 16px; background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 1.8rem;">
+                            </div>
+                        </div>
+
+                        <h2 class="fw-bold text-center mb-2">Join GlowHub</h2>
+                        <p class="text-muted text-center mb-4">Create your account and book beauty services</p>
+
+                        <!-- Form -->
+                        <form method="post">
+                            {% csrf_token %}
+
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 12px; border: none; margin-bottom: 1.5rem;">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}<br>
+                                {% endfor %}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            {% endif %}
+
+                            <!-- First Name -->
+                            <div class="mb-3">
+                                <label class="form-label-modern">First Name</label>
+                                <input type="text" name="first_name" class="form-control-modern" placeholder="Your first name" required>
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="mb-3">
+                                <label class="form-label-modern">Last Name</label>
+                                <input type="text" name="last_name" class="form-control-modern" placeholder="Your last name" required>
+                            </div>
+
+                            <!-- Email Field -->
+                            <div class="mb-3">
+                                <label class="form-label-modern">Email Address</label>
+                                <input type="email" name="email" class="form-control-modern" placeholder="your@email.com" required>
+                                {% if form.email.errors %}
+                                <small class="text-danger d-block mt-2">{{ form.email.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+
+                            <!-- Username Field -->
+                            <div class="mb-3">
+                                <label class="form-label-modern">Username</label>
+                                <input type="text" name="username" class="form-control-modern" placeholder="Choose a username" required>
+                                {% if form.username.errors %}
+                                <small class="text-danger d-block mt-2">{{ form.username.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+
+                            <!-- Password Field -->
+                            <div class="mb-3">
+                                <label class="form-label-modern">Password</label>
+                                <div class="input-group">
+                                    <input type="password" name="password1" id="id_password1" class="form-control-modern" placeholder="Create a strong password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('id_password1')" style="border-radius: 0 12px 12px 0; border: 2px solid #E5E7EB; background: white;">
+                                        <span></span>
+                                    </button>
+                                </div>
+                                {% if form.password1.errors %}
+                                <small class="text-danger d-block mt-2">{{ form.password1.errors.0 }}</small>
+                                {% endif %}
+                                <small class="text-muted d-block mt-2">
+                                    At least 8 characters, mix of letters and numbers
+                                </small>
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div class="mb-4">
+                                <label class="form-label-modern">Confirm Password</label>
+                                <div class="input-group">
+                                    <input type="password" name="password2" id="id_password2" class="form-control-modern" placeholder="Confirm your password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('id_password2')" style="border-radius: 0 12px 12px 0; border: 2px solid #E5E7EB; background: white;">
+                                        <span></span>
+                                    </button>
+                                </div>
+                                {% if form.password2.errors %}
+                                <small class="text-danger d-block mt-2">{{ form.password2.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+
+                            <!-- Terms & Conditions -->
+                            <div class="mb-4 form-check">
+                                <input type="checkbox" id="agreeTerms" class="form-check-input" required style="border-radius: 4px; border: 2px solid #E5E7EB; cursor: pointer;">
+                                <label class="form-check-label" for="agreeTerms" style="cursor: pointer; font-weight: 600;">
+                                    I agree to the <a href="#" class="text-gradient text-decoration-none">Terms of Service</a> and <a href="#" class="text-gradient text-decoration-none">Privacy Policy</a>
+                                </label>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn-primary-modern w-100 py-3 mb-3" style="border-radius: 12px; font-size: 1rem;">
+                                Create My Account
+                            </button>
+                        </form>
+
+                        <!-- Divider -->
+                        <div class="text-center my-4">
+                            <span style="color: #D1D5DB;">or</span>
+                        </div>
+
+                        <!-- OAuth/Social Buttons -->
+                        <button type="button" class="btn-outline-modern w-100 py-3 mb-3" style="border-radius: 12px;">
+                            Sign up with Google
+                        </button>
+                        <button type="button" class="btn-outline-modern w-100 py-3 mb-4" style="border-radius: 12px;">
+                            Sign up with Facebook
+                        </button>
+
+                        <!-- Sign In Link -->
+                        <p class="text-center text-muted">
+                            Already have an account? <a href="{% url 'login' %}" class="text-gradient fw-bold text-decoration-none">Sign in here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Illustration Side (Hidden on Mobile) -->
+            <div class="col-lg-5 d-none d-lg-flex align-items-center justify-content-center">
+                <div class="text-center">
+                    <div style="font-size: 8rem; color: #7C3AED; opacity: 0.1; animation: float 3s ease-in-out infinite;">
+                    </div>
+                    <h3 class="fw-bold mt-4 mb-2">Premium Beauty Services</h3>
+                    <p class="text-muted">Access Kenya's best salon professionals with one click</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePasswordVisibility(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = event.currentTarget.querySelector('span');
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        } else {
+            field.type = 'password';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    }
+</script>
+
+<style>
+    .btn-outline-modern {
+        background: white;
+        color: var(--primary);
+        border: 2px solid var(--border-color);
+        padding: 0.65rem 1.8rem;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.95rem;
+    }
+
+    .btn-outline-modern:hover {
+        background: var(--background);
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load form_helpers %}
+{% block title %}Add Staff - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div><h4 class="mb-1">Add Staff Member</h4></div>
+    <a href="{% url 'admin_staff' %}" class="btn btn-soft-purple">Back</a>
+</div>
+
+{% if created_user %}
+<div class="card mb-4 border-success">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0 text-success">Staff Member Created!</h5>
+                <p class="text-muted mb-0">{{ created_user.first_name }} {{ created_user.last_name }} ({{ created_user.username }})</p>
+            </div>
+        </div>
+        {% if temp_password %}
+        <div class="alert alert-warning d-flex align-items-center gap-3" style="border-left: 4px solid #d97706; border-radius: 12px;">
+            <div>
+                <strong>Temporary Password:</strong>
+                <span style="font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; background: #fff; padding: 4px 12px; border-radius: 6px; border: 1px dashed #d97706; user-select: all;" onclick="this.select()">{{ temp_password }}</span>
+                <br><small class="text-muted">Share this securely with the staff member. They will be required to change it on first login.</small>
+            </div>
+        </div>
+        {% endif %}
+        <a href="{% url 'admin_staff' %}" class="btn btn-success">View All Staff</a>
+    </div>
+</div>
+{% endif %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card"><div class="card-body p-4">
+            <form method="post" novalidate class="needs-validation">{% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-6">{% field form.first_name %}</div>
+                    <div class="col-6">{% field form.last_name %}</div>
+                    <div class="col-6">{% field form.email %}</div>
+                    <div class="col-6">{% field form.username %}</div>
+                    <div class="col-4">{% field form.role %}</div>
+                    <div class="col-4">{% field form.phone %}</div>
+                    <div class="col-4">{% field form.expertise_years %}</div>
+                    <div class="col-12">{% field form.specialization %}</div>
+                    <div class="col-12">{% field form.bio %}</div>
+                    <div class="col-md-6">{% field form.password %}</div>
+                    <div class="col-md-6">{% field form.confirm_password %}</div>
+                    <div class="col-12">{% field form.send_invite_email %}</div>
+                </div>
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger mt-3">
+                    {% for error in form.non_field_errors %}
+                    <p class="mb-0"><i class="bi bi-exclamation-circle me-2"></i>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-purple mt-4">Add Staff</button>
+            </form>
+        </div></div>
+    </div>
+</div>
+{% endblock %}

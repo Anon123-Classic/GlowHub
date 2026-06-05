@@ -1,0 +1,221 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+
+{% block title %}All Services - GlowHub{% endblock %}
+
+{% block content %}
+
+<div style="padding-top: 80px; background: var(--background); min-height: 100vh;">
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-5 animate-fade-in-up">
+            <span class="text-gradient fw-bold" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px;">
+                Salon Services
+            </span>
+            <h1 class="fw-bold mt-3">Explore Our Premium Services</h1>
+            <p class="text-muted mt-3 fs-5">Discover the perfect beauty and wellness treatments curated for you</p>
+        </div>
+
+        <!-- Filter/Search Section -->
+        <div class="row mb-5 animate-fade-in-up" style="animation-delay: 0.1s;">
+            <div class="col-lg-8 mx-auto">
+                <div class="glass-card">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div>
+                                <label class="form-label-modern">Search Services</label>
+                                <input type="text" id="serviceSearch" class="form-control-modern" placeholder="Search by name..." style="width: 100%;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div>
+                                <label class="form-label-modern">Filter by Category</label>
+                                <select id="categoryFilter" class="form-control-modern" style="width: 100%;">
+                                    <option value="">All Categories</option>
+                                    {% for choice in services|dictsort:"category" %}
+                                        {% if choice.category %}
+                                            <option value="{{ choice.get_category_display }}">{{ choice.get_category_display }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services Grid -->
+        <div class="row g-4 mb-5">
+            {% for service in services %}
+            <div class="col-md-6 col-lg-4 service-item" data-name="{{ service.name|lower }}" data-category="{{ service.get_category_display }}">
+                <div class="service-card animate-fade-in-up">
+                    <!-- Service Image -->
+                    {% if service.category == 'hair' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #DDD6FE 0%, #EDE9FE 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'makeup' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #FED7AA 0%, #FECACA 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'nails' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #F9A8D4 0%, #F472B6 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'spa' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #A7F3D0 0%, #6EE7B7 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'barber' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #BFDBFE 0%, #93C5FD 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'facial' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #F5D5E3 0%, #E8B4D0 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+
+                            {% endif %}
+                        </div>
+                    {% elif service.category == 'waxing' %}
+                        <div class="service-image" style="background: linear-gradient(135deg, #FFD6A5 0%, #FFCA79 100%);">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="service-image">
+                            {% if service.image %}
+                                <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                            {% else %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Service Body -->
+                    <div class="service-body">
+                        <span class="service-category">{{ service.get_category_display }}</span>
+                        <h5 class="service-name">{{ service.name }}</h5>
+                        <p class="service-description">{{ service.description|truncatewords:15 }}</p>
+
+                        <!-- Rating -->
+                        <div class="service-rating">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= service.appointments.count|add:2 %}
+                                    <span class="star"></span>
+                                {% elif forloop.counter|add:-1 == service.appointments.count|add:2 %}
+                                    <span class="star"></span>
+                                {% else %}
+                                    <span class="star" style="color: #E5E7EB;"></span>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="rating-text">({{ service.appointments.count }} bookings)</span>
+                        </div>
+
+                        <!-- Meta Info -->
+                        <div class="service-meta">
+                            <span class="badge-price">KES {{ service.price }}</span>
+                            <span class="badge-duration">{{ service.duration }} min</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="gap-2" style="display: flex; gap: 0.5rem;">
+                            <a href="{% url 'service_detail' service.id %}" class="btn-book" style="flex: 1;">
+                                View Details
+                            </a>
+                            {% if user.is_authenticated %}
+                            <a href="{% url 'book_appointment' %}?service={{ service.id }}" style="background: white; color: #7C3AED; border: 2px solid #7C3AED; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; cursor: pointer; flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.3rem; transition: all 0.3s ease; border-radius: 12px;" 
+                                onmouseover="this.style.background='#F5F3FF'" 
+                                onmouseout="this.style.background='white'">
+                                Book
+                            </a>
+                            {% else %}
+                            <a href="{% url 'login' %}?next={% url 'book_appointment' %}?service={{ service.id }}" style="background: white; color: #7C3AED; border: 2px solid #7C3AED; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; cursor: pointer; flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.3rem; transition: all 0.3s ease;" 
+                                onmouseover="this.style.background='#F5F3FF'" 
+                                onmouseout="this.style.background='white'">
+                                Book
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+
+                <h4 class="text-muted mt-3">No services found</h4>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Empty State -->
+        {% if not services %}
+        <div class="card-modern p-5 text-center">
+
+            <h3 class="mt-4">No services available</h3>
+            <p class="text-muted mt-2">Check back soon for our latest offerings!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Filter and Search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('serviceSearch');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const serviceItems = document.querySelectorAll('.service-item');
+
+        function filterServices() {
+            const searchTerm = searchInput?.value.toLowerCase() || '';
+            const categoryTerm = categoryFilter?.value.toLowerCase() || '';
+
+            serviceItems.forEach(item => {
+                const name = item.dataset.name;
+                const category = item.dataset.category.toLowerCase();
+                
+                const matchesSearch = name.includes(searchTerm);
+                const matchesCategory = categoryTerm === '' || category === categoryTerm;
+                
+                if (matchesSearch && matchesCategory) {
+                    item.style.display = 'block';
+                    setTimeout(() => {
+                        item.style.opacity = '1';
+                    }, 10);
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        searchInput?.addEventListener('input', filterServices);
+        categoryFilter?.addEventListener('change', filterServices);
+    });
+
+    // Scroll animations
+    document.querySelectorAll('.animate-fade-in-up').forEach((el, index) => {
+        el.style.animationDelay = (index * 0.05) + 's';
+    });
+</script>
+
+{% endblock %}

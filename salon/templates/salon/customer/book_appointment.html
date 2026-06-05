@@ -1,0 +1,158 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+{% block title %}Book Appointment - GlowHub{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="section-title d-inline-block">Book an Appointment</h2>
+        <p class="text-muted mt-3">Select your service, date, and time</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="post" id="booking-form" novalidate class="needs-validation">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <div class="booking-step active">
+                                <div class="step-number">1</div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Choose a Service</h6>
+                                    <p class="text-muted small mb-0">Select the service you'd like to book</p>
+                                </div>
+                            </div>
+                            <select name="service" id="id_service" class="form-select" required>
+                                <option value="">— Select a category & service —</option>
+                                {% regroup services by get_category_display as service_groups %}
+                                {% for group in service_groups %}
+                                <optgroup label="{{ group.grouper }}">
+                                    {% for service in group.list %}
+                                    <option value="{{ service.pk }}" data-price="{{ service.price }}" data-duration="{{ service.duration }}" data-description="{{ service.description|truncatechars:80|escapejs }}" {% if selected_service_id|stringformat:'s' == service.pk|stringformat:'s' %}selected{% endif %}>
+                                        {{ service.name }} - Ksh {{ service.price }}
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endfor %}
+                            </select>
+                            {% if form.service.errors %}
+                            <div class="invalid-feedback d-block">{{ form.service.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="booking-step active">
+                                <div class="step-number">2</div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Pick a Date</h6>
+                                    <p class="text-muted small mb-0">Choose your preferred date</p>
+                                </div>
+                            </div>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                            <div class="invalid-feedback d-block">{{ form.date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="booking-step active">
+                                <div class="step-number">3</div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Select Time</h6>
+                                    <p class="text-muted small mb-0">Choose an available time slot</p>
+                                </div>
+                            </div>
+                            <div id="slots-loading" class="text-center py-3" style="display:none;">
+                                <span class="loading-spinner"></span>
+                                <p class="text-muted small mt-2">Loading available slots...</p>
+                            </div>
+                            <div id="time-slots-container" class="row g-2">
+                                <div class="col-12">
+                                    <p class="text-muted text-center py-3 mb-0">Select a date to see available time slots.</p>
+                                </div>
+                            </div>
+                            {{ form.time }}
+                            {% if form.time.errors %}
+                            <div class="invalid-feedback d-block">{{ form.time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="booking-step active">
+                                <div class="step-number">4</div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Notes (Optional)</h6>
+                                    <p class="text-muted small mb-0">Any special requests?</p>
+                                </div>
+                            </div>
+                            {{ form.notes }}
+                        </div>
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0"><i class="bi bi-exclamation-circle me-2"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-purple w-100 btn-lg mt-3">
+                            <i class="bi bi-calendar-check me-2"></i>Confirm Booking
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-info-circle text-purple me-2"></i>Booking Info</h6>
+                    <div class="booking-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Working Hours</span>
+                            <span class="summary-value">9 AM - 7 PM</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Slot Duration</span>
+                            <span class="summary-value">30 minutes</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Max per Day</span>
+                            <span class="summary-value">2 appointments</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Cancellation</span>
+                            <span class="summary-value">2 hrs before</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-scissors text-purple me-2"></i>Selected Service</h6>
+                    <div class="booking-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Service</span>
+                            <span id="selected-service-name" class="summary-value">Select a service</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Price</span>
+                            <span id="selected-service-price" class="summary-value">—</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Duration</span>
+                            <span id="selected-service-duration" class="summary-value">—</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Details</span>
+                            <span id="selected-service-description" class="summary-value text-muted small">Choose a service to preview details.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

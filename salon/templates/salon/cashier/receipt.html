@@ -1,0 +1,86 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% block title %}Receipt - GlowHub{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div><h4 class="mb-1">Payment Receipt</h4><p class="text-muted mb-0">Receipt #{{ payment.receipt_number }}</p></div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-purple">Print Receipt</button>
+        <a href="{% url 'cashier_dashboard' %}" class="btn btn-soft-purple">Back</a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card" id="receipt-card">
+            <div class="card-body p-5">
+                <div class="text-center mb-4 pb-3 border-bottom">
+                    <h2 class="fw-bold text-purple mb-1">GlowHub</h2>
+                    <p class="text-muted mb-0">Premium Salon Services</p>
+                </div>
+
+                <div class="d-flex justify-content-between mb-4">
+                    <div>
+                        <p class="mb-1"><strong>Receipt #:</strong> {{ payment.receipt_number }}</p>
+                        <p class="mb-1"><strong>Date:</strong> {{ payment.payment_date|date:"F d, Y g:i A" }}</p>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success fs-6 px-3 py-2">PAID</span>
+                    </div>
+                </div>
+
+                <div class="receipt-details mb-4">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted ps-0">Customer</td>
+                            <td class="fw-medium text-end">{{ appointment.user.get_full_name|default:appointment.user.username }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0">Service</td>
+                            <td class="fw-medium text-end">{{ appointment.service.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0">Staff</td>
+                            <td class="fw-medium text-end">{{ appointment.assigned_staff.user.get_full_name|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0">Payment Method</td>
+                            <td class="fw-medium text-end">{{ payment.get_payment_method_display }}</td>
+                        </tr>
+                        {% if payment.transaction_code %}
+                        <tr>
+                            <td class="text-muted ps-0">Transaction Reference</td>
+                            <td class="fw-medium text-end">{{ payment.transaction_code }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <div class="border-top pt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-5 fw-bold">Total Paid</span>
+                        <span class="fs-4 fw-bold text-purple">Ksh {{ payment.amount|floatformat:2 }}</span>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 pt-3 border-top">
+                    <p class="text-muted small mb-0">Thank you for choosing GlowHub!</p>
+                    <p class="text-muted small mb-0">Receipt generated on {{ payment.payment_date|date:"Y-m-d H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .sidebar, .admin-header, .btn, .nav, .sidebar-toggle-btn, footer, .toast-container {
+        display: none !important;
+    }
+    .admin-content { margin-left: 0 !important; padding: 0 !important; }
+    #receipt-card { border: none !important; box-shadow: none !important; }
+    body { background: #fff !important; }
+}
+</style>
+{% endblock %}

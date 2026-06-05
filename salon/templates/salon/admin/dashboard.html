@@ -1,0 +1,164 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load static %}
+{% block title %}Dashboard - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h4 class="mb-1">Dashboard</h4>
+        <p class="text-muted mb-0">Overview of your salon operations</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Bookings</div>
+                    <div class="stat-number">{{ total_appointments }}</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #d97706;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Pending</div>
+                    <div class="stat-number text-warning">{{ pending_appointments }}</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #2563eb;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Approved</div>
+                    <div class="stat-number text-primary">{{ approved_appointments }}</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #8b5cf6;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-number" style="color: #8b5cf6;">{{ in_progress_appointments }}</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #d97706;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Awaiting Payment</div>
+                    <div class="stat-number text-warning">{{ awaiting_payment_appointments }}</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #059669;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Completed</div>
+                    <div class="stat-number text-success">{{ completed_appointments }}</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="fw-bold mb-4">Weekly Bookings</h5>
+                <div style="height: 300px;">
+                    <canvas id="bookingsChart" data-labels='{{ week_days|safe }}' data-counts='{{ week_counts|safe }}'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="fw-bold mb-4">Quick Stats</h5>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Services</span>
+                    <span class="fw-bold">{{ total_services }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Customers</span>
+                    <span class="fw-bold">{{ total_customers }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Assigned Bookings</span>
+                    <span class="fw-bold text-purple">{{ assigned_bookings }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Unassigned Bookings</span>
+                    <span class="fw-bold text-warning">{{ unassigned_bookings }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Cancelled</span>
+                    <span class="fw-bold text-danger">{{ cancelled_appointments }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2">
+                    <span class="text-muted">Total Revenue</span>
+                    <span class="fw-bold text-purple">Ksh {{ total_revenue|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Recent Bookings</h5>
+            <a href="{% url 'admin_bookings' %}" class="btn btn-sm btn-soft-purple">View All</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Service</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in recent_appointments %}
+                    <tr>
+                        <td class="fw-medium">{{ b.user.first_name|default:b.user.username }}</td>
+                        <td>{{ b.service.name }}</td>
+                        <td>{{ b.date|date:"M d, Y" }}</td>
+                        <td>{{ b.time|time:"g:i A" }}</td>
+                        <td><span class="status-badge status-{{ b.status }}">{{ b.get_status_display }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5"><div class="empty-state py-3"><p class="mb-0">No bookings yet.</p></div></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

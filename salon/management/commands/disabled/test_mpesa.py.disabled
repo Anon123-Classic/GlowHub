@@ -1,0 +1,256 @@
+"""
+M-Pesa STK Push Configuration Test Command
+
+Tests:
+1. Environment variables are loaded
+2. M-Pesa credentials are present
+3. Callback URL is valid (not placeholder)
+4. Access token can be generated
+5. STK Push would be ready
+"""
+
+import os
+import base64
+import logging
+from django.core.management.base import BaseCommand
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+
+class Command(BaseCommand):
+    help = "Test M-Pesa STK Push configuration and readiness"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--verbose',
+            action='store_true',
+            help='Show detailed configuration values',
+        )
+
+    def handle(self, *args, **options):
+        verbose = options.get('verbose', False)
+        
+        self.stdout.write("\n" + "=" * 60)
+        self.stdout.write("M-PESA STK PUSH CONFIGURATION TEST")
+        self.stdout.write("=" * 60 + "\n")
+
+        # Task 1: Check Environment Variables
+        self.stdout.write(self.style.WARNING("\n[TASK 1] ENVIRONMENT VARIABLES"))
+        self.stdout.write("-" * 60)
+
+        env_vars = {
+            'MPESA_ENV': ('sandbox', 'Environment'),
+            'MPESA_CONSUMER_KEY': ('', 'Consumer Key'),
+            'MPESA_CONSUMER_SECRET': ('', 'Consumer Secret'),
+            'MPESA_SHORTCODE': ('174379', 'Short Code'),
+            'MPESA_PASSKEY': ('', 'Passkey'),
+            'MPESA_CALLBACK_URL': ('', 'Callback URL'),
+            'HOST_URL': ('http://127.0.0.1:8000', 'Host URL'),
+        }
+
+        loaded_values = {}
+        issues = []
+
+        for env_var, (default, display_name) in env_vars.items():
+            value = getattr(settings, env_var, default)
+            loaded_values[env_var] = value
+
+            # Check for issues
+            if env_var == 'MPESA_CONSUMER_KEY':
+                if not value or value == 'your-consumer-key':
+                    issues.append(f"❌ {display_name}: NOT CONFIGURED")
+                    self.stdout.write(self.style.ERROR(f"  ❌ {display_name}: NOT CONFIGURED"))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"  ✅ {display_name}: OK"))
+            
+            elif env_var == 'MPESA_CONSUMER_SECRET':
+                if not value or value == 'your-consumer-secret':
+                    issues.append(f"❌ {display_name}: NOT CONFIGURED")
+                    self.stdout.write(self.style.ERROR(f"  ❌ {display_name}: NOT CONFIGURED"))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"  ✅ {display_name}: OK"))
+            
+            elif env_var == 'MPESA_PASSKEY':
+                if not value or value == 'your-passkey':
+                    issues.append(f"⚠️  {display_name}: EMPTY (required for password generation)")
+                    self.stdout.write(self.style.WARNING(f"  ⚠️  {display_name}: EMPTY"))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"  ✅ {display_name}: OK"))
+            
+            elif env_var == 'MPESA_CALLBACK_URL':
+                if not value or 'your-ngrok-url' in value or value == '':
+                    issues.append(f"❌ {display_name}: PLACEHOLDER/MISSING (needs ngrok URL)")
+                    self.stdout.write(self.style.ERROR(f"  ❌ {display_name}: PLACEHOLDER/MISSING"))
+                elif 'localhost' in value or '127.0.0.1' in value:
+                    self.stdout.write(self.style.WARNING(f"  ⚠️  {display_name}: localhost (will fail in production)"))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"  ✅ {display_name}: OK"))
+            
+            elif env_var == 'HOST_URL':
+                if not value or 'your-ngrok-url' in value:
+                    issues.append(f"❌ {display_name}: PLACEHOLDER/MISSING")
+                    self.stdout.write(self.style.ERROR(f"  ❌ {display_name}: PLACEHOLDER/MISSING"))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"  ✅ {display_name}: OK"))
+            
+            elif env_var == 'MPESA_SHORTCODE':
+                if not value or value == '':
+                    issues.append(f"❌ {display_name}: NOT CONFIGURED")
+                    self.stdout.write(self.style.ERROR(f"  ❌ {display_name}: NOT CONFIGURED"))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"  ✅ {display_name}: {value}"))
+
+        # Task 2: STK Push Readiness Check
+        self.stdout.write(self.style.WARNING("\n[TASK 2] STK PUSH READINESS CHECK"))
+        self.stdout.write("-" * 60)
+
+        readiness = {
+            'Consumer Key': 'OK' if (loaded_values.get('MPESA_CONSUMER_KEY') and 
+                                     loaded_values.get('MPESA_CONSUMER_KEY') != 'your-consumer-key') else 'MISSING',
+            'Consumer Secret': 'OK' if (loaded_values.get('MPESA_CONSUMER_SECRET') and 
+                                       loaded_values.get('MPESA_CONSUMER_SECRET') != 'your-consumer-secret') else 'MISSING',
+            'Short Code': 'OK' if loaded_values.get('MPESA_SHORTCODE') else 'MISSING',
+            'Passkey': 'OK' if loaded_values.get('MPESA_PASSKEY') else 'EMPTY',
+            'Callback URL': 'OK' if (loaded_values.get('MPESA_CALLBACK_URL') and 
+                                    'your-ngrok-url' not in loaded_values.get('MPESA_CALLBACK_URL', '')) else 'INVALID',
+        }
+
+        for key, status in readiness.items():
+            if status == 'OK':
+                self.stdout.write(self.style.SUCCESS(f"  ✅ {key}: {status}"))
+            else:
+                self.stdout.write(self.style.ERROR(f"  ❌ {key}: {status}"))
+                if key not in issues:
+                    issues.append(f"{key}: {status}")
+
+        # Task 3: Access Token Test
+        self.stdout.write(self.style.WARNING("\n[TASK 3] ACCESS TOKEN GENERATION TEST"))
+        self.stdout.write("-" * 60)
+
+        try:
+            import requests
+            consumer_key = loaded_values.get('MPESA_CONSUMER_KEY', '')
+            consumer_secret = loaded_values.get('MPESA_CONSUMER_SECRET', '')
+            
+            if not consumer_key or not consumer_secret:
+                self.stdout.write(self.style.ERROR("  ❌ Cannot test: credentials not configured"))
+            else:
+                auth_string = f"{consumer_key}:{consumer_secret}"
+                encoded_auth = base64.b64encode(auth_string.encode()).decode()
+                
+                env = loaded_values.get('MPESA_ENV', 'sandbox')
+                url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
+                
+                self.stdout.write(f"  Testing token generation from: {url}")
+                
+                response = requests.get(
+                    url,
+                    headers={'Authorization': f'Basic {encoded_auth}'},
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    token = data.get('access_token')
+                    if token:
+                        self.stdout.write(self.style.SUCCESS(f"  ✅ Token generated successfully"))
+                        if verbose:
+                            self.stdout.write(f"     Token (first 20 chars): {token[:20]}...")
+                    else:
+                        self.stdout.write(self.style.ERROR(f"  ❌ No token in response: {data}"))
+                        issues.append("Token generation failed - no token in response")
+                else:
+                    self.stdout.write(self.style.ERROR(f"  ❌ HTTP {response.status_code}: {response.text[:100]}"))
+                    issues.append(f"Token generation failed - HTTP {response.status_code}")
+        
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"  ❌ Error: {str(e)}"))
+            issues.append(f"Token generation error: {str(e)}")
+
+        # Task 4: STK Push Password Generation
+        self.stdout.write(self.style.WARNING("\n[TASK 4] STK PUSH PASSWORD GENERATION TEST"))
+        self.stdout.write("-" * 60)
+
+        try:
+            from datetime import datetime
+            shortcode = loaded_values.get('MPESA_SHORTCODE', '174379')
+            passkey = loaded_values.get('MPESA_PASSKEY', '')
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            
+            if not passkey:
+                self.stdout.write(self.style.WARNING("  ⚠️  Passkey is empty - password generation will fail"))
+                self.stdout.write(f"     Shortcode: {shortcode}")
+                self.stdout.write(f"     Timestamp: {timestamp}")
+                self.stdout.write(f"     Passkey: (empty)")
+                issues.append("Passkey required for password generation")
+            else:
+                password_str = f"{shortcode}{passkey}{timestamp}"
+                password = base64.b64encode(password_str.encode()).decode()
+                self.stdout.write(self.style.SUCCESS(f"  ✅ Password generated successfully"))
+                if verbose:
+                    self.stdout.write(f"     Shortcode: {shortcode}")
+                    self.stdout.write(f"     Timestamp: {timestamp}")
+                    self.stdout.write(f"     Password (first 20 chars): {password[:20]}...")
+        
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"  ❌ Error: {str(e)}"))
+            issues.append(f"Password generation error: {str(e)}")
+
+        # Task 5: Callback URL Validation
+        self.stdout.write(self.style.WARNING("\n[TASK 5] CALLBACK URL VALIDATION"))
+        self.stdout.write("-" * 60)
+
+        callback_url = loaded_values.get('MPESA_CALLBACK_URL', '')
+        if not callback_url:
+            self.stdout.write(self.style.ERROR("  ❌ Callback URL is empty"))
+            issues.append("Callback URL is empty")
+        elif 'your-ngrok-url' in callback_url:
+            self.stdout.write(self.style.ERROR("  ❌ Callback URL is still a placeholder"))
+            self.stdout.write(f"     Current: {callback_url}")
+            issues.append("Callback URL is a placeholder")
+        else:
+            self.stdout.write(self.style.SUCCESS(f"  ✅ Callback URL is set"))
+            self.stdout.write(f"     URL: {callback_url}")
+
+        # Summary
+        self.stdout.write("\n" + "=" * 60)
+        self.stdout.write("SUMMARY")
+        self.stdout.write("=" * 60 + "\n")
+
+        if issues:
+            self.stdout.write(self.style.ERROR(f"\n❌ ISSUES FOUND ({len(issues)} issues):"))
+            for i, issue in enumerate(issues, 1):
+                self.stdout.write(f"   {i}. {issue}")
+            
+            self.stdout.write(self.style.ERROR("\n🔧 FIXES REQUIRED:"))
+            self.stdout.write("\n1. Update .env file with:")
+            self.stdout.write("   - Run ngrok: ngrok http 8000")
+            self.stdout.write("   - Copy HTTPS URL from ngrok output")
+            self.stdout.write("   - Update .env:")
+            self.stdout.write("     MPESA_CALLBACK_URL=https://YOUR-NGROK-URL.ngrok-free.app/mpesa/callback/")
+            self.stdout.write("     HOST_URL=https://YOUR-NGROK-URL.ngrok-free.app")
+            self.stdout.write("\n2. Ensure passkey is configured in .env")
+            self.stdout.write("\n3. Restart Django: python manage.py runserver")
+        else:
+            self.stdout.write(self.style.SUCCESS("\n✅ ALL CHECKS PASSED!"))
+            self.stdout.write("\nYou can now test the M-Pesa flow:")
+            self.stdout.write("1. Go to Cashier Dashboard → Awaiting Payments")
+            self.stdout.write("2. Click 'Pay' and select M-Pesa")
+            self.stdout.write("3. Enter a test phone number (e.g., 254712345678)")
+            self.stdout.write("4. Click 'Pay' and wait for STK Push on test phone")
+
+        self.stdout.write("\n" + "=" * 60 + "\n")
+
+        if verbose and loaded_values:
+            self.stdout.write(self.style.WARNING("\nDETAILED CONFIGURATION:"))
+            self.stdout.write("-" * 60)
+            for key, value in loaded_values.items():
+                if 'SECRET' in key or 'KEY' in key:
+                    if value:
+                        display = f"{value[:10]}...{value[-5:]}" if len(value) > 20 else value
+                    else:
+                        display = "(empty)"
+                else:
+                    display = value
+                self.stdout.write(f"  {key}: {display}")

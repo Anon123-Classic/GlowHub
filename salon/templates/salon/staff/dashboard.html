@@ -1,0 +1,192 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load static %}
+{% block title %}Staff Dashboard - GlowHub{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h4 class="mb-1">Staff Dashboard</h4>
+        <p class="text-muted mb-0">
+            <span class="badge bg-purple-soft text-purple me-2">{{ staff.get_role_display }}</span>
+            {% if staff.specialization %}{{ staff.specialization }} &bull;{% endif %}
+            {{ staff.expertise_years }} yr{{ staff.expertise_years|pluralize:"s" }} exp
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'staff_appointments' %}" class="btn btn-soft-purple">
+            Appointments
+        </a>
+        <a href="{% url 'staff_profile' %}" class="btn btn-soft-purple">
+            My Profile
+        </a>
+        <a href="{% url 'staff_change_password' %}" class="btn btn-soft-purple">
+            Password
+        </a>
+        <a href="{% url 'logout' %}" class="btn btn-outline-danger">
+            Logout
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: var(--purple-primary);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Today's Appointments</div>
+                    <div class="stat-number">{{ stats.today }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #2563eb;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Upcoming</div>
+                    <div class="stat-number text-primary">{{ upcoming|length }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #f59e0b;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-number" style="color: #f59e0b;">{{ stats.in_progress }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #059669;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Completed Today</div>
+                    <div class="stat-number text-success">{{ stats.today_completed }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="admin-stat-card" style="border-left-color: var(--purple-primary);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Assigned</div>
+                    <div class="stat-number">{{ stats.total_appointments }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="admin-stat-card" style="border-left-color: #059669;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Completed (All Time)</div>
+                    <div class="stat-number text-success">{{ stats.completed }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Today's Schedule</h5>
+        </div>
+        {% if appointments %}
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Customer</th>
+                        <th>Service</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for apt in appointments %}
+                    <tr>
+                        <td class="fw-bold">{{ apt.time|time:"g:i A" }}</td>
+                        <td>{{ apt.user.get_full_name|default:apt.user.username }}</td>
+                        <td>{{ apt.service.name }}</td>
+                        <td><span class="status-badge status-{{ apt.status }}">{{ apt.get_status_display }}</span></td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-soft-purple dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-gear"></i>
+                                </button>
+                                <ul class="dropdown-menu shadow-sm">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'staff_appointment_detail' apt.pk %}">
+                                            View Details
+                                        </a>
+                                    </li>
+                                    {% if apt.status == 'approved' %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'staff_mark_in_progress' apt.pk %}" data-confirm="Start this appointment?">
+                                            Start (In Progress)
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    {% if apt.status == 'in_progress' %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'staff_mark_completed' apt.pk %}" data-confirm="Mark as completed?">
+                                            Complete
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h5>No Appointments Today</h5>
+            <p>Enjoy your day off!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if upcoming %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="fw-bold mb-3">Upcoming Appointments</h5>
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Customer</th>
+                        <th>Service</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for apt in upcoming %}
+                    <tr>
+                        <td>{{ apt.date|date:"M d, Y" }}</td>
+                        <td>{{ apt.time|time:"g:i A" }}</td>
+                        <td>{{ apt.user.get_full_name|default:apt.user.username }}</td>
+                        <td>{{ apt.service.name }}</td>
+                        <td><span class="status-badge status-{{ apt.status }}">{{ apt.get_status_display }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load form_helpers %}
+{% block title %}Edit Expense - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div><h4 class="mb-1">Edit Expense</h4></div>
+    <a href="{% url 'admin_expenses' %}" class="btn btn-soft-purple">Back</a>
+</div>
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card"><div class="card-body p-4">
+            <form method="post" novalidate class="needs-validation">{% csrf_token %}
+                {% field form.title %}
+                <div class="row g-3 mb-3">
+                    <div class="col-6">{% field form.category %}</div>
+                    <div class="col-6">{% field form.amount %}</div>
+                </div>
+                {% field form.date %}
+                {% field form.description %}
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <button type="submit" class="btn btn-purple w-100 mt-3">Update Expense</button>
+            </form>
+        </div></div>
+    </div>
+</div>
+{% endblock %}

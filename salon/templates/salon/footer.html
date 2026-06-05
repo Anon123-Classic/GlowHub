@@ -1,0 +1,260 @@
+{% load static %}
+{% comment %} Modern GlowHub Footer {% endcomment %}
+
+{% if not request.user.is_staff %}
+
+<footer class="footer-modern">
+    <div class="footer-glow footer-glow-1"></div>
+    <div class="footer-glow footer-glow-2"></div>
+
+```
+<div class="container py-5 position-relative">
+    <div class="row g-5">
+
+        <!-- Brand -->
+        <div class="col-lg-4 col-md-6">
+            <div class="footer-brand">
+                GlowHub
+            </div>
+
+            <p class="footer-text mt-3">
+                Kenya's modern salon management platform helping beauty professionals streamline
+                appointments, manage clients, and grow their businesses effortlessly.
+            </p>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="col-lg-4 col-md-6">
+            <h5 class="footer-heading">Quick Links</h5>
+
+            <ul class="footer-links">
+                <li>
+                    <a href="{% url 'home' %}">
+                        Home
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'services' %}">
+                        Our Services
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'book_appointment' %}">
+                        Book Appointment
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Contact -->
+        <div class="col-lg-4">
+            <h5 class="footer-heading">Contact Us</h5>
+
+            <div class="footer-contact">
+                <p>
+                    <a href="tel:+254714596647">
+                        +254 714 596 647
+                    </a>
+                </p>
+
+                <p>
+                    <a href="mailto:info@glowhub.co.ke">
+                        info@glowhub.co.ke
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+        <p class="copyright-text">
+            &copy; 2026 GlowHub. All Rights Reserved.
+        </p>
+
+        <span class="footer-tagline">
+            Empowering Kenyan Beauty Professionals ✨
+        </span>
+    </div>
+</div>
+```
+
+</footer>
+
+<style>
+.footer-modern{
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(
+        135deg,
+        #4c1d95 0%,
+        #6d28d9 45%,
+        #9333ea 70%,
+        #ec4899 100%
+    );
+    color:#fff;
+}
+
+.footer-glow{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(80px);
+    opacity:.25;
+}
+
+.footer-glow-1{
+    width:250px;
+    height:250px;
+    background:#ffffff;
+    top:-80px;
+    left:-80px;
+}
+
+.footer-glow-2{
+    width:300px;
+    height:300px;
+    background:#f9a8d4;
+    bottom:-120px;
+    right:-120px;
+}
+
+.footer-brand{
+    font-size:2rem;
+    font-weight:800;
+    letter-spacing:-0.5px;
+}
+
+.footer-brand i{
+    color:#fbcfe8;
+}
+
+.footer-text{
+    color:rgba(255,255,255,.85);
+    line-height:1.8;
+    max-width:380px;
+}
+
+.footer-heading{
+    font-weight:700;
+    margin-bottom:1.25rem;
+    position:relative;
+}
+
+.footer-heading::after{
+    content:'';
+    width:45px;
+    height:3px;
+    background:#fbcfe8;
+    position:absolute;
+    left:0;
+    bottom:-8px;
+    border-radius:10px;
+}
+
+.footer-links{
+    list-style:none;
+    padding:0;
+    margin:0;
+}
+
+.footer-links li{
+    margin-bottom:12px;
+}
+
+.footer-links a{
+    color:rgba(255,255,255,.85);
+    text-decoration:none;
+    transition:.3s ease;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+}
+
+.footer-links a:hover{
+    color:#fff;
+    transform:translateX(6px);
+}
+
+.footer-contact p{
+    margin-bottom:14px;
+}
+
+.footer-contact i{
+    color:#fbcfe8;
+    margin-right:10px;
+}
+
+.footer-contact a{
+    color:rgba(255,255,255,.85);
+    text-decoration:none;
+}
+
+.footer-contact a:hover{
+    color:#fff;
+}
+
+.footer-socials{
+    display:flex;
+    gap:12px;
+}
+
+.footer-socials a{
+    width:48px;
+    height:48px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:rgba(255,255,255,.15);
+    backdrop-filter:blur(12px);
+    color:#fff;
+    text-decoration:none;
+    transition:.3s ease;
+}
+
+.footer-socials a:hover{
+    background:#fff;
+    color:#6d28d9;
+    transform:translateY(-5px);
+}
+
+.footer-bottom{
+    margin-top:3rem;
+    padding-top:1.5rem;
+    border-top:1px solid rgba(255,255,255,.2);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.copyright-text{
+    margin:0;
+    font-weight:800;
+    font-size:1rem;
+    color:#fff;
+    letter-spacing:.3px;
+}
+
+.footer-tagline{
+    color:rgba(255,255,255,.9);
+    font-weight:500;
+}
+
+@media (max-width:768px){
+
+    .footer-bottom{
+        text-align:center;
+        justify-content:center;
+    }
+
+    .footer-brand{
+        font-size:1.75rem;
+    }
+}
+</style>
+
+{% endif %}

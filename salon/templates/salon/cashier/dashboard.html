@@ -1,0 +1,99 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% block title %}Cashier Dashboard - GlowHub{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div><h4 class="mb-1">Cashier Dashboard</h4><p class="text-muted mb-0">{{ today|date:"l, F d, Y" }}</p></div>
+    <a href="{% url 'cashier_walkin' %}" class="btn btn-purple">Walk-In</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #d97706;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Awaiting Payments</div>
+                    <div class="stat-number text-warning">{{ pending_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #059669;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Revenue Today</div>
+                    <div class="stat-number text-success">Ksh {{ paid_today|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card" style="border-left-color: #92400e;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Cash Payments</div>
+                    <div class="stat-number">Ksh {{ cash_today|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Awaiting Payments</h5>
+            <span class="badge bg-warning text-dark">{{ pending_count }} pending</span>
+        </div>
+        {% if pending_payments %}
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Service</th>
+                        <th>Staff</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for apt in pending_payments %}
+                    <tr>
+                        <td class="fw-medium">{{ apt.user.get_full_name|default:apt.user.username }}</td>
+                        <td>{{ apt.service.name }}</td>
+                        <td>{{ apt.assigned_staff.user.get_full_name|default:"—" }}</td>
+                        <td>{{ apt.date|date:"M d, Y" }}</td>
+                        <td class="fw-bold">Ksh {{ apt.service.price }}</td>
+                        <td><span class="status-badge status-pending">{{ apt.payment_status|title }}</span></td>
+                        <td>
+                            <a href="{% url 'process_payment' apt.pk %}" class="btn btn-sm btn-success">
+                                Receive Cash
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h5>All Caught Up!</h5>
+            <p>No pending payments. All completed appointments have been settled.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto !important;
+        }
+    }
+</style>
+{% endblock %}

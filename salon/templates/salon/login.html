@@ -1,0 +1,51 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+{% load form_helpers %}
+{% block title %}Login - GlowHub{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card slide-up">
+        <h3 class="text-center mb-1">Welcome Back</h3>
+        <p class="text-muted text-center mb-4">Sign in to your account</p>
+
+        <form method="post" novalidate class="needs-validation">
+            {% csrf_token %}
+            {% field form.username %}
+            <div class="mb-3">
+                <label class="form-label fw-medium small">Password</label>
+                <div class="position-relative">
+                    {{ form.password }}
+                    <span class="password-toggle position-absolute top-50 end-0 translate-middle-y me-3" style="cursor:pointer;">
+                        <i class="bi bi-eye"></i>
+                    </span>
+                </div>
+                {% if form.password.errors %}
+                <div class="invalid-feedback d-block">{{ form.password.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                    {{ form.remember_me }}
+                    <label class="form-check-label small" for="id_remember_me">Remember me for 30 days</label>
+                </div>
+                <a href="{% url 'password_reset' %}" class="text-purple text-decoration-none small fw-medium">Forgot password?</a>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                <p class="mb-0"><i class="bi bi-exclamation-circle me-2"></i>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary w-100">Sign In</button>
+        </form>
+
+        <p class="text-center mt-4 mb-0 text-muted small">
+            Don't have an account?
+            <a href="{% url 'register' %}" class="text-purple text-decoration-none fw-medium">Sign Up</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

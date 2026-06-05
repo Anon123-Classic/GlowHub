@@ -1,0 +1,396 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+{% block content %}
+
+<div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="false">
+
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+    </div>
+
+    <div class="carousel-inner">
+
+        <div class="carousel-item active" style="background-image: linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.35)), url('{% static 'salon/images/image6.png' %}');">
+            <div class="container hero-content-wrap">
+                <div class="row align-items-center min-vh-85">
+                    <div class="col-lg-7 animate-fade-in-up py-4">
+                        <span class="badge bg-white text-purple px-3 py-2 rounded-pill mb-3 fs-6 fw-semibold">
+                             Premium Salon Experience
+                        </span>
+
+                        <h1 class="hero-title text-white">Look Your Best,<br>Feel Your Best</h1>
+
+                        <p class="hero-subtitle text-white">
+                            Book premium salon services with top stylists. Experience the art of beauty at GlowHub —
+                            where your style meets perfection.
+                        </p>
+
+                        <div class="d-flex flex-wrap gap-3">
+                            <a href="{% url 'register' %}" class="btn-hero">
+                                Book Now
+                            </a>
+
+                            <a href="{% url 'services' %}" class="btn-hero btn-hero-secondary">
+                                Our Services
+                            </a>
+                        </div>
+
+                        <div class="hero-stats mt-4 pt-2">
+                            <div>
+                                <span class="fw-bold fs-4 text-white">50+</span><br>
+                                <span class="text-white-50 small">Services</span>
+                            </div>
+
+                            <div>
+                                <span class="fw-bold fs-4 text-white">1K+</span><br>
+                                <span class="text-white-50 small">Happy Clients</span>
+                            </div>
+
+                            <div>
+                                <span class="fw-bold fs-4 text-white">5★</span><br>
+                                <span class="text-white-50 small">Rating</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="carousel-item" style="background-image: linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.35)), url('{% static 'salon/images/image7.png' %}');">
+            <div class="container hero-content-wrap">
+                <div class="row align-items-center min-vh-85">
+                    <div class="col-lg-7 animate-fade-in-up py-4">
+                        <span class="badge bg-white text-purple px-3 py-2 rounded-pill mb-3 fs-6 fw-semibold">
+                             Wide Range of Services
+                        </span>
+
+                        <h1 class="hero-title text-white">Everything Beauty<br>Under One Roof</h1>
+
+                        <p class="hero-subtitle text-white">
+                            From haircuts and styling to manicures, pedicures, facials, and spa treatments —
+                            we offer a complete beauty experience tailored for you.
+                        </p>
+
+                        <div class="hero-service-grid mb-4">
+                            <div class="service-item">
+                                <div class="text-white small fw-semibold mt-1">Hair</div>
+                            </div>
+
+                            <div class="service-item">
+                                <div class="text-white small fw-semibold mt-1">Nails</div>
+                            </div>
+
+                            <div class="service-item">
+                                <div class="text-white small fw-semibold mt-1">Spa</div>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'services' %}" class="btn-hero">
+                            View All Services
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="carousel-item" style="background-image: linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.35)), url('{% static 'salon/images/image9.png' %}');">
+            <div class="container hero-content-wrap">
+                <div class="row align-items-center min-vh-85">
+                    <div class="col-lg-7 animate-fade-in-up py-4">
+                        <span class="badge bg-white text-purple px-3 py-2 rounded-pill mb-3 fs-6 fw-semibold">
+                             Book Online 24/7
+                        </span>
+
+                        <h1 class="hero-title text-white">Book Instantly,<br>Skip the Wait</h1>
+
+                        <p class="hero-subtitle text-white">
+                            No phone calls needed. Browse services, pick your preferred stylist,
+                            and book your appointment in seconds — anytime, anywhere.
+                        </p>
+
+                        <div class="d-flex flex-wrap gap-3">
+                            <a href="{% url 'register' %}" class="btn-hero">
+                                Get Started
+                            </a>
+
+                            <a href="{% url 'login' %}" class="btn-hero btn-hero-secondary">
+                                Sign In
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
+
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title d-inline-block">Our Premium Services</h2>
+            <p class="text-muted mt-3">Professional services tailored to your needs</p>
+        </div>
+
+        <div class="row g-4">
+            {% for service in services|slice:":6" %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card service-card h-100">
+                    {% if service.image %}
+                    <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
+                    {% else %}
+                    <div class="card-img-top d-flex align-items-center justify-content-center bg-soft-purple">
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="fw-bold mb-0">{{ service.name }}</h5>
+                            <span class="duration-badge">
+                                {{ service.duration }}m
+                            </span>
+                        </div>
+
+                        <p class="text-muted small flex-grow-1">
+                            {{ service.description|truncatewords:20 }}
+                        </p>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="price-tag">Ksh {{ service.price }}</span>
+                            <a href="{% url 'service_detail' service.pk %}" class="btn btn-purple btn-sm">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <h5>No Services Available</h5>
+                    <p>Check back soon for our premium services.</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if services.count > 6 %}
+        <div class="text-center mt-4">
+            <a href="{% url 'services' %}" class="btn btn-purple-outline">
+                View All Services
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title d-inline-block">Why Choose GlowHub?</h2>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="text-center p-4">
+                    <div class="bg-purple-soft d-inline-flex p-3 rounded-3 mb-3">
+                    </div>
+                    <h5 class="fw-bold">Easy Booking</h5>
+                    <p class="text-muted small">
+                        Book appointments online in just a few clicks, anytime, anywhere.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="text-center p-4">
+                    <div class="bg-purple-soft d-inline-flex p-3 rounded-3 mb-3">
+                    </div>
+                    <h5 class="fw-bold">Expert Stylists</h5>
+                    <p class="text-muted small">
+                        Our professional team delivers exceptional results every time.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="text-center p-4">
+                    <div class="bg-purple-soft d-inline-flex p-3 rounded-3 mb-3">
+                    </div>
+                    <h5 class="fw-bold">Premium Quality</h5>
+                    <p class="text-muted small">
+                        We use only the finest products and techniques for our clients.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.hero-carousel,
+.hero-carousel .carousel-inner,
+.hero-carousel .carousel-item {
+    min-height: 85vh;
+}
+
+.hero-carousel .carousel-item {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.min-vh-85 {
+    min-height: 85vh;
+}
+
+.hero-content-wrap {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-title {
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+    text-shadow: 0 5px 22px rgba(0,0,0,0.65);
+}
+
+.hero-subtitle {
+    max-width: 620px;
+    font-size: 1.12rem;
+    line-height: 1.8;
+    margin-top: 1.25rem;
+    margin-bottom: 1.75rem;
+    text-shadow: 0 3px 14px rgba(0,0,0,0.65);
+}
+
+.btn-hero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 1.7rem;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #7c3aed;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    transition: all 0.25s ease;
+}
+
+.btn-hero:hover {
+    color: #6d28d9;
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+}
+
+.btn-hero-secondary {
+    background: rgba(255,255,255,0.12);
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.65);
+    backdrop-filter: blur(8px);
+}
+
+.btn-hero-secondary:hover {
+    background: #ffffff;
+    color: #6d28d9;
+}
+
+.hero-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.hero-service-grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.service-item {
+    width: 92px;
+    height: 82px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    backdrop-filter: blur(8px);
+}
+
+.text-purple {
+    color: #7c3aed !important;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 8%;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    width: 3rem;
+    height: 3rem;
+    padding: 1.5rem;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.35);
+    background-size: 55%;
+}
+
+.carousel-indicators [data-bs-target] {
+    width: 34px;
+    height: 5px;
+    border-radius: 999px;
+}
+
+@media (max-width: 768px) {
+    .hero-carousel,
+    .hero-carousel .carousel-inner,
+    .hero-carousel .carousel-item,
+    .min-vh-85 {
+        min-height: 78vh;
+    }
+
+    .hero-title {
+        font-size: clamp(2.25rem, 12vw, 3.6rem);
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    .hero-stats {
+        gap: 1.25rem;
+    }
+
+    .btn-hero {
+        width: 100%;
+    }
+
+    .carousel-control-prev,
+    .carousel-control-next {
+        display: none;
+    }
+}
+</style>
+
+{% endblock %}

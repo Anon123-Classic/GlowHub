@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin - GlowHub{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="{% static 'salon/images/favicon.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'salon/css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle sidebar">
+        <i class="bi bi-list"></i>
+    </button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="sidebar" id="adminSidebar">
+        <div class="sidebar-brand">
+            <span>GlowHub</span>
+        </div>
+        <ul class="nav flex-column mt-3">
+            {% if user.is_superuser %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" href="{% url 'admin_dashboard' %}">
+ Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'bookings' in request.resolver_match.url_name or request.resolver_match.url_name == 'assign_staff' or request.resolver_match.url_name == 'block_slot' %}active{% endif %}" href="{% url 'admin_bookings' %}">
+ Bookings
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'staff' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin_staff' %}">
+ Staff
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'services' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin_services' %}">
+ Services
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'customers' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin_customers' %}">
+ Customers
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'cashier' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'cashier_dashboard' %}">
+ Cashier
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'payments' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin_payments' %}">
+ Payments
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'finance' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'finance_dashboard' %}">
+ Finance
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'expenses' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin_expenses' %}">
+ Expenses
+                </a>
+            </li>
+            {% endif %}
+            {% if user.staff_profile and user.staff_profile.role == 'cashier' %}
+            <li class="nav-item mt-4">
+                <div class="px-3 py-1">
+                    <small class="text-white-50 fw-bold text-uppercase" style="opacity:0.6; font-size:0.7rem; letter-spacing:1px;">Cashier Portal</small>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'cashier_dashboard' %}active{% endif %}" href="{% url 'cashier_dashboard' %}">
+ Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'cashier_payment_history' %}active{% endif %}" href="{% url 'cashier_payment_history' %}">
+ Payment History
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'cashier_walkin' %}active{% endif %}" href="{% url 'cashier_walkin' %}">
+ Walk-In
+                </a>
+            </li>
+            {% endif %}
+            {% if user.staff_profile and user.staff_profile.role != 'cashier' %}
+            <li class="nav-item mt-4">
+                <div class="px-3 py-1">
+                    <small class="text-white-50 fw-bold text-uppercase" style="opacity:0.6; font-size:0.7rem; letter-spacing:1px;">Staff Portal</small>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'staff_dashboard' %}active{% endif %}" href="{% url 'staff_dashboard' %}">
+ My Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'staff_appointments' %}active{% endif %}" href="{% url 'staff_appointments' %}">
+ My Appointments
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'staff_profile' %}active{% endif %}" href="{% url 'staff_profile' %}">
+ My Profile
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'staff_change_password' %}active{% endif %}" href="{% url 'staff_change_password' %}">
+ Change Password
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item mt-2">
+                <a class="nav-link" href="{% url 'logout' %}">
+ Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="admin-content" id="adminContent">
+        {% if messages %}
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+            {% for message in messages %}
+            <div class="toast align-items-center border-0 shadow-lg {% if message.tags == 'error' %}bg-danger{% elif message.tags == 'success' %}bg-success{% else %}bg-purple{% endif %} text-white" role="alert" data-bs-delay="4000">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        {{ message }}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'salon/js/main.js' %}"></script>
+    <script src="{% static 'salon/js/validation.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var toggleBtn = document.getElementById('sidebarToggle');
+            var sidebar = document.getElementById('adminSidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+            var content = document.getElementById('adminContent');
+
+            function toggleSidebar() {
+                document.body.classList.toggle('sidebar-open');
+                overlay.classList.toggle('active');
+                var icon = toggleBtn.querySelector('i');
+                if (document.body.classList.contains('sidebar-open')) {
+                    icon.className = 'bi bi-x-lg';
+                } else {
+                    icon.className = 'bi bi-list';
+                }
+            }
+
+            if (toggleBtn && window.innerWidth < 992) {
+                toggleBtn.addEventListener('click', toggleSidebar);
+                if (overlay) {
+                    overlay.addEventListener('click', toggleSidebar);
+                }
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

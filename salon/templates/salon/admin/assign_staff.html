@@ -1,0 +1,66 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% block title %}Assign Staff - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h4 class="mb-1">Assign Staff</h4>
+        <p class="text-muted mb-0">{{ appointment.service.name }} on {{ appointment.date|date:"M d, Y" }} at {{ appointment.time|time:"g:i A" }}</p>
+    </div>
+    <a href="{% url 'admin_bookings' %}" class="btn btn-soft-purple">Back</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <h6 class="fw-bold">Appointment Details</h6>
+                    <div class="booking-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Customer</span>
+                            <span class="summary-value">{{ appointment.user.first_name|default:appointment.user.username }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Service</span>
+                            <span class="summary-value">{{ appointment.service.name }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Date</span>
+                            <span class="summary-value">{{ appointment.date|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Time</span>
+                            <span class="summary-value">{{ appointment.time|time:"g:i A" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <form method="post" novalidate class="needs-validation">
+                    {% csrf_token %}
+                    {% if allowed_role_names %}
+                <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.9rem; border-left: 3px solid var(--purple-primary);">
+                    Showing staff matching <strong>{{ appointment.service.name }}</strong>:
+                    {{ allowed_role_names|join:", " }}
+                </div>
+                {% endif %}
+                <div class="mb-3">
+                        <label class="form-label fw-medium">Select Staff Member</label>
+                        <select name="staff_id" class="form-select">
+                            <option value="">— Unassign —</option>
+                            {% for staff_member in staff_list %}
+                            <option value="{{ staff_member.id }}" {% if appointment.assigned_staff_id == staff_member.id %}selected{% endif %}>
+                                {{ staff_member.user.get_full_name|default:staff_member.user.username }} ({{ staff_member.get_role_display }})
+                            </option>
+                            {% empty %}
+                            <option value="" disabled>No available staff match this service</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-purple w-100">
+                        Assign Staff
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

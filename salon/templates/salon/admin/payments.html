@@ -1,0 +1,66 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% block title %}Payments - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div><h4 class="mb-1">Payment Management</h4><p class="text-muted mb-0">Track all payments</p></div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6"><div class="admin-stat-card"><div class="stat-label">Total Collected</div><div class="stat-number text-success">Ksh {{ total_paid|floatformat:2 }}</div></div></div>
+    <div class="col-md-6"><div class="admin-stat-card" style="border-left-color: #d97706;"><div class="stat-label">Pending Payments</div><div class="stat-number text-warning">Ksh {{ total_pending|floatformat:2 }}</div></div></div>
+</div>
+
+<div class="card mb-4"><div class="card-body">
+    <form method="get" class="row g-3">
+        <div class="col-md-3"><select name="status" class="form-select filter-select"><option value="">All Status</option><option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Paid</option><option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option><option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option><option value="refunded" {% if status_filter == 'refunded' %}selected{% endif %}>Refunded</option></select></div>
+        <div class="col-md-3"><select name="method" class="form-select filter-select"><option value="">All Methods</option><option value="cash" {% if method_filter == 'cash' %}selected{% endif %}>Cash</option></select></div>
+        <div class="col-md-2"><button type="submit" class="btn btn-purple w-100">Filter</button></div>
+    </form>
+</div></div>
+
+<div class="card"><div class="card-body p-0">
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>{{ p.id }}</td>
+                    <td class="fw-medium">{{ p.appointment.user.first_name|default:p.appointment.user.username }}</td>
+                    <td>{{ p.appointment.service.name }}</td>
+                    <td class="fw-bold">Ksh {{ p.amount }}</td>
+                    <td><span class="badge bg-purple-soft text-purple">{{ p.get_payment_method_display }}</span></td>
+                    <td>
+                        {% if p.payment_status == 'paid' %}<span class="status-badge status-approved">Paid</span>
+                        {% elif p.payment_status == 'pending' %}<span class="status-badge status-pending">Pending</span>
+                        {% elif p.payment_status == 'failed' %}<span class="status-badge status-cancelled">Failed</span>
+                        {% else %}<span class="status-badge status-cancelled">Refunded</span>{% endif %}
+                    </td>
+                    <td>{{ p.payment_date|date:"M d, Y g:i A"|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7"><div class="empty-state"><h5>No Payments</h5><p>Payments will appear here.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div></div>
+
+{% if paginator.num_pages > 1 %}
+<nav class="mt-4" aria-label="Payments pagination">
+    <ul class="pagination pagination-modern justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}"></a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}"></a></li>
+        {% endif %}
+        {% for num in paginator.page_range %}
+        <li class="page-item {% if num == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}">{{ num }}</a></li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}"></a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if method_filter %}&method={{ method_filter }}{% endif %}"></a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

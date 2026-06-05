@@ -1,0 +1,89 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load static %}
+{% block title %}Appointment Details - GlowHub{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h4 class="mb-1">Appointment Details</h4>
+        <p class="text-muted mb-0">{{ appointment.service.name }} &bull; {{ appointment.date|date:"M d, Y" }}</p>
+    </div>
+    <a href="{% url 'staff_dashboard' %}" class="btn btn-soft-purple">
+        Back to Dashboard
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h5 class="fw-bold mb-1">{{ appointment.service.name }}</h5>
+                        <span class="status-badge status-{{ appointment.status }}">{{ appointment.get_status_display }}</span>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-4 text-purple">Ksh {{ appointment.service.price }}</div>
+                        <small class="text-muted">{{ appointment.service.duration }} mins</small>
+                    </div>
+                </div>
+
+                <div class="booking-summary mb-4">
+                    <div class="summary-item">
+                        <span class="summary-label">Customer</span>
+                        <span class="summary-value">{{ appointment.user.get_full_name|default:appointment.user.username }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Email</span>
+                        <span class="summary-value">{{ appointment.user.email }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Service</span>
+                        <span class="summary-value">{{ appointment.service.name }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Category</span>
+                        <span class="summary-value">{{ appointment.service.get_category_display }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Date</span>
+                        <span class="summary-value">{{ appointment.date|date:"l, F d, Y" }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Time</span>
+                        <span class="summary-value">{{ appointment.time|time:"g:i A" }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Duration</span>
+                        <span class="summary-value">{{ appointment.service.duration }} minutes</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Price</span>
+                        <span class="summary-value">Ksh {{ appointment.service.price }}</span>
+                    </div>
+                    {% if appointment.notes %}
+                    <div class="summary-item">
+                        <span class="summary-label">Notes</span>
+                        <span class="summary-value">{{ appointment.notes }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if appointment.status == 'approved' %}
+                <div class="d-flex gap-2">
+                    <a href="{% url 'staff_mark_in_progress' appointment.pk %}" class="btn btn-primary flex-fill" data-confirm="Start this appointment?">
+                        Start (In Progress)
+                    </a>
+                    <a href="{% url 'staff_mark_completed' appointment.pk %}" class="btn btn-success flex-fill" data-confirm="Mark as completed?">
+                        Complete
+                    </a>
+                </div>
+                {% elif appointment.status == 'in_progress' %}
+                <a href="{% url 'staff_mark_completed' appointment.pk %}" class="btn btn-success w-100" data-confirm="Mark as completed?">
+                    Mark as Completed
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

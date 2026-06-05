@@ -1,0 +1,63 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+{% load form_helpers %}
+{% block title %}Register - GlowHub{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card slide-up">
+        <h3 class="text-center mb-1">Create Account</h3>
+        <p class="text-muted text-center mb-4">Join GlowHub today</p>
+
+        <form method="post" novalidate class="needs-validation">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-6">{% field form.first_name %}</div>
+                <div class="col-6">{% field form.last_name %}</div>
+                <div class="col-12">{% field form.username %}</div>
+                <div class="col-12">{% field form.email %}</div>
+                <div class="col-12">{% field form.phone %}</div>
+                <div class="col-12">
+                    <label class="form-label fw-medium small">Password</label>
+                    <div class="position-relative">
+                        {{ form.password1 }}
+                        <span class="password-toggle position-absolute top-50 end-0 translate-middle-y me-3" style="cursor:pointer;">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    {% if form.password1.errors %}
+                    <div class="invalid-feedback d-block">{{ form.password1.errors.0 }}</div>
+                    {% endif %}
+                    <div class="form-text small">At least 8 characters with letters and numbers.</div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-medium small">Confirm Password</label>
+                    <div class="position-relative">
+                        {{ form.password2 }}
+                        <span class="password-toggle position-absolute top-50 end-0 translate-middle-y me-3" style="cursor:pointer;">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    {% if form.password2.errors %}
+                    <div class="invalid-feedback d-block">{{ form.password2.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger mt-3">
+                {% for error in form.non_field_errors %}
+                <p class="mb-0"><i class="bi bi-exclamation-circle me-2"></i>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary w-100 mt-4">Create Account</button>
+        </form>
+
+        <p class="text-center mt-4 mb-0 text-muted small">
+            Already have an account?
+            <a href="{% url 'login' %}" class="text-purple text-decoration-none fw-medium">Sign In</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

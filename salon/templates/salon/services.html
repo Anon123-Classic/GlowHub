@@ -1,0 +1,53 @@
+{% extends 'salon/base.html' %}
+{% block title %}Services - GlowHub{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="section-title d-inline-block">Our Services</h2>
+        <p class="text-muted mt-3">Choose from our wide range of premium salon services</p>
+    </div>
+
+    {% regroup services by get_category_display as category_groups %}
+    {% for group in category_groups %}
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <h3 class="fw-bold mb-0">{{ group.grouper }}</h3>
+            <span class="badge bg-purple-soft text-purple fs-6">{{ group.list|length }}</span>
+        </div>
+        <div class="row g-4">
+            {% for service in group.list %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card service-card h-100">
+                    {% if service.image %}
+                    <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
+                    {% else %}
+                    <div class="card-img-top d-flex align-items-center justify-content-center" style="background: var(--purple-soft); height:120px;">
+                        <span class="text-purple fw-bold fs-1">{{ service.name|first }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="fw-bold mb-0">{{ service.name }}</h5>
+                            <span class="duration-badge">{{ service.duration }}m</span>
+                        </div>
+                        <p class="text-muted small flex-grow-1">{{ service.description|truncatewords:25 }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="price-tag">Ksh {{ service.price }}</span>
+                            <a href="{% url 'service_detail' service.pk %}" class="btn btn-purple btn-sm">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="empty-state">
+            <h5>No Services Available</h5>
+            <p>Check back soon for our premium services.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

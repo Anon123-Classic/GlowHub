@@ -1,0 +1,124 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load static %}
+{% block title %}Finance - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div><h4 class="mb-1">Financial Dashboard</h4><p class="text-muted mb-0">Revenue, expenses, and profit tracking</p></div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_finance_csv' %}?type=payments" class="btn btn-soft-purple">Payments CSV</a>
+        <a href="{% url 'export_finance_csv' %}?type=expenses" class="btn btn-soft-purple">Expenses CSV</a>
+        <a href="{% url 'export_finance_csv' %}?type=finance" class="btn btn-purple">Full Report</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="admin-stat-card"><div class="stat-label">Monthly Revenue</div><div class="stat-number text-success">Ksh {{ monthly_revenue|floatformat:2 }}</div></div></div>
+    <div class="col-md-3"><div class="admin-stat-card" style="border-left-color: #d97706;"><div class="stat-label">Monthly Expenses</div><div class="stat-number text-danger">Ksh {{ monthly_expenses|floatformat:2 }}</div></div></div>
+    <div class="col-md-3"><div class="admin-stat-card" style="border-left-color: {% if monthly_profit >= 0 %}#059669{% else %}#dc2626{% endif %};"><div class="stat-label">Monthly Profit</div><div class="stat-number {% if monthly_profit >= 0 %}text-success{% else %}text-danger{% endif %}">Ksh {{ monthly_profit|floatformat:2 }}</div></div></div>
+    <div class="col-md-3"><div class="admin-stat-card" style="background: var(--purple-gradient); color: #fff;"><div class="stat-label text-white-50">Total Revenue</div><div class="stat-number">Ksh {{ total_revenue|floatformat:2 }}</div></div></div>
+    <div class="col-md-3"><div class="admin-stat-card" style="background: var(--purple-gradient); color: #fff;"><div class="stat-label text-white-50">Total Expenses</div><div class="stat-number">Ksh {{ total_expenses|floatformat:2 }}</div></div></div>
+    <div class="col-md-3"><div class="admin-stat-card" style="border-left-color: {% if total_profit >= 0 %}#059669{% else %}#dc2626{% endif %};"><div class="stat-label">Total Profit</div><div class="stat-number {% if total_profit >= 0 %}text-success{% else %}text-danger{% endif %}">Ksh {{ total_profit|floatformat:2 }}</div></div></div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card"><div class="card-body">
+            <h5 class="fw-bold mb-4">Revenue vs Expenses</h5>
+            <div style="height: 300px;"><canvas id="financeChart" data-months='{{ months|safe }}' data-revenue='{{ revenue_data|safe }}' data-expenses='{{ expense_data|safe }}'></canvas></div>
+        </div></div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card"><div class="card-body">
+            <h5 class="fw-bold mb-4">Revenue Breakdown</h5>
+            <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Cash</span><span class="fw-bold">Ksh {{ cash_revenue|floatformat:2 }}</span></div>
+            <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Pending</span><span class="fw-bold text-warning">Ksh {{ pending_payments|floatformat:2 }}</span></div>
+            <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Total Expenses</span><span class="fw-bold text-danger">Ksh {{ total_expenses|floatformat:2 }}</span></div>
+            <div class="d-flex justify-content-between py-2 border-top pt-2 mt-1"><span class="fs-5 fw-bold">Net Profit</span><span class="fs-5 fw-bold {% if total_profit >= 0 %}text-success{% else %}text-danger{% endif %}">Ksh {{ total_profit|floatformat:2 }}</span></div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card"><div class="card-body">
+            <h5 class="fw-bold mb-3">Revenue by Category</h5>
+            {% for r in revenue_by_category %}
+            <div class="d-flex justify-content-between py-2 border-bottom">
+                <span>{{ r.label }}</span>
+                <span class="fw-bold text-success">Ksh {{ r.total|floatformat:2 }}</span>
+            </div>
+            {% empty %}
+            <p class="text-muted text-center py-3">No revenue yet.</p>
+            {% endfor %}
+        </div></div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card"><div class="card-body">
+            <h5 class="fw-bold mb-3">Expense Breakdown</h5>
+            {% for e in expense_breakdown %}
+            <div class="d-flex justify-content-between py-2 border-bottom">
+                <span>{{ e.category|title }}</span>
+                <span class="fw-bold text-danger">Ksh {{ e.total|floatformat:2 }}</span>
+            </div>
+            {% empty %}
+            <p class="text-muted text-center py-3">No expenses recorded.</p>
+            {% endfor %}
+        </div></div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card"><div class="card-body">
+            <h5 class="fw-bold mb-3">Recent Payments</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Customer</th><th>Service</th><th>Amount</th><th>Method</th><th>Date</th></tr></thead>
+                    <tbody>
+                        {% for p in recent_payments %}
+                        <tr>
+                            <td>{{ p.appointment.user.first_name|default:p.appointment.user.username }}</td>
+                            <td>{{ p.appointment.service.name }}</td>
+                            <td class="fw-bold">Ksh {{ p.amount }}</td>
+                            <td><span class="badge bg-purple-soft text-purple">{{ p.get_payment_method_display }}</span></td>
+                            <td class="small">{{ p.payment_date|date:"M d, Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted">No payments yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var canvas = document.getElementById('financeChart');
+    if (!canvas) return;
+    var months = JSON.parse(canvas.dataset.months || '[]');
+    var revenue = JSON.parse(canvas.dataset.revenue || '[]');
+    var expenses = JSON.parse(canvas.dataset.expenses || '[]');
+    if (months.length && typeof Chart !== 'undefined') {
+        new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [
+                    { label: 'Revenue', data: revenue, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.1)', tension: 0.3, fill: true },
+                    { label: 'Expenses', data: expenses, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)', tension: 0.3, fill: true }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

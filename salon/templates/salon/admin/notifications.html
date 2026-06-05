@@ -1,0 +1,129 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% block title %}Notifications - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h4 class="mb-1">Notification Management</h4>
+        <p class="text-muted mb-0">Track notifications and send reminders</p>
+    </div>
+    <button class="btn btn-purple" data-bs-toggle="modal" data-bs-target="#sendRemindersModal">
+        Send Reminders
+    </button>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="fw-bold mb-3">Send Appointment Reminders</h5>
+        <p class="text-muted small">Send reminder emails to customers with appointments in the next 24 hours.</p>
+        <form method="post" action="{% url 'send_reminders' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-purple">
+                Send Reminders Now
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white border-bottom py-3">
+        <h5 class="mb-0 fw-bold">Notification Logs</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Appointment</th>
+                        <th>Type</th>
+                        <th>Recipient</th>
+                        <th>Status</th>
+                        <th>Sent At</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.id }}</td>
+                        <td>
+                            <a href="{% url 'admin_bookings' %}" class="text-purple text-decoration-none">
+                                #{{ log.appointment.id }}
+                            </a>
+                        </td>
+                        <td><span class="badge bg-purple-soft text-purple">{{ log.get_notification_type_display }}</span></td>
+                        <td>{{ log.recipient_email }}</td>
+                        <td>
+                            {% if log.status == 'sent' %}
+                            <span class="status-badge status-approved">Sent</span>
+                            {% else %}
+                            <span class="status-badge status-cancelled">Failed</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.sent_at|date:"M d, Y g:i A" }}</td>
+                        <td>
+                            {% if log.error_log %}
+                            <span class="text-danger small" title="{{ log.error_log }}">{{ log.error_log|truncatechars:30 }}</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <h5>No Notifications Yet</h5>
+                                <p>Notifications will appear when emails are sent.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if paginator.num_pages > 1 %}
+<nav class="mt-4" aria-label="Notifications pagination">
+    <ul class="pagination pagination-modern justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1"></a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}"></a></li>
+        {% endif %}
+        {% for num in paginator.page_range %}
+        <li class="page-item {% if num == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}"></a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ paginator.num_pages }}"></a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<div class="modal fade" id="sendRemindersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Send Reminders</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>This will send reminder emails to all customers with approved appointments in the next 24 hours.</p>
+                <p class="text-muted small">Only one reminder per appointment will be sent.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'send_reminders' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-purple">
+                        Send Reminders
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load static %}
+{% block title %}My Profile - GlowHub{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h4 class="mb-1">My Profile</h4>
+        <p class="text-muted mb-0">Your staff information and details</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'staff_update_profile' %}" class="btn btn-purple">
+            Edit Profile
+        </a>
+        <a href="{% url 'staff_dashboard' %}" class="btn btn-soft-purple">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center p-4">
+                {% if staff.profile_photo %}
+                <img src="{{ staff.profile_photo.url }}" class="mx-auto mb-3" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                <div class="mx-auto mb-3" style="width: 100px; height: 100px; background: var(--purple-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                </div>
+                {% endif %}
+                <h5 class="fw-bold mb-1">{{ staff.user.get_full_name }}</h5>
+                <p class="text-muted mb-2">@{{ staff.user.username }}</p>
+                <span class="badge {% if staff.availability == 'available' %}bg-success{% elif staff.availability == 'on_leave' %}bg-warning text-dark{% else %}bg-secondary{% endif %} rounded-pill px-3 py-2">
+                    {{ staff.get_availability_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Staff Information</h5>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="booking-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">My Role</span>
+                                <span class="summary-value">{{ staff.get_role_display }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Specialization</span>
+                                <span class="summary-value">{{ staff.specialization|default:"General" }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Phone</span>
+                                <span class="summary-value">{{ staff.phone|default:"Not set" }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Experience</span>
+                                <span class="summary-value">{{ staff.expertise_years }} year{{ staff.expertise_years|pluralize:"s" }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Email</span>
+                                <span class="summary-value">{{ staff.user.email }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="booking-summary h-100">
+                            <div class="summary-item">
+                                <span class="summary-label">Total Assigned</span>
+                                <span class="summary-value">{{ staff.get_total_appointments }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Completed</span>
+                                <span class="summary-value">{{ staff.get_completed_appointments }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Today's Appointments</span>
+                                <span class="summary-value">{{ staff.get_today_appointments }}</span>
+                            </div>
+                        </div>
+                        {% if staff.bio %}
+                        <div class="mt-3">
+                            <label class="fw-medium text-muted small">About</label>
+                            <p class="mb-0 mt-1">{{ staff.bio }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-1">Account Security</h5>
+                    <p class="text-muted mb-0">Update your login password</p>
+                </div>
+                <a href="{% url 'staff_change_password' %}" class="btn btn-soft-purple">
+                    Change Password
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

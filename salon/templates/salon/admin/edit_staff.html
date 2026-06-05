@@ -1,0 +1,26 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load form_helpers %}
+{% block title %}Edit Staff - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div><h4 class="mb-1">Edit Staff: {{ staff.user.first_name }} {{ staff.user.last_name }}</h4></div>
+    <a href="{% url 'admin_staff' %}" class="btn btn-soft-purple">Back</a>
+</div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card"><div class="card-body p-4">
+            <form method="post" novalidate class="needs-validation">{% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-4">{% field form.role %}</div>
+                    <div class="col-4">{% field form.phone %}</div>
+                    <div class="col-4">{% field form.expertise_years %}</div>
+                    <div class="col-12">{% field form.specialization %}</div>
+                    <div class="col-12">{% field form.bio %}</div>
+                    <div class="col-12">{% field form.availability %}</div>
+                </div>
+                <button type="submit" class="btn btn-purple mt-4">Update Staff</button>
+            </form>
+        </div></div>
+    </div>
+</div>
+{% endblock %}

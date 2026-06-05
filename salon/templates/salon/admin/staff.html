@@ -1,0 +1,57 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% block title %}Staff Management - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div><h4 class="mb-1">Staff Management</h4><p class="text-muted mb-0">Manage your salon team</p></div>
+    <a href="{% url 'add_staff' %}" class="btn btn-purple">Add Staff</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="admin-stat-card"><div class="stat-label">Total Staff</div><div class="stat-number">{{ stats.total }}</div></div></div>
+    <div class="col-md-3"><div class="admin-stat-card" style="border-left-color: #059669;"><div class="stat-label">Available</div><div class="stat-number text-success">{{ stats.available }}</div></div></div>
+    <div class="col-md-3"><div class="admin-stat-card" style="border-left-color: #f59e0b;"><div class="stat-label">On Leave</div><div class="stat-number" style="color:#f59e0b;">{{ stats.on_leave }}</div></div></div>
+    <div class="col-md-3"><div class="admin-stat-card" style="border-left-color: #dc2626;"><div class="stat-label">Unavailable</div><div class="stat-number text-danger">{{ stats.unavailable }}</div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr><th>Name</th><th>Role</th><th>Specialization</th><th>Phone</th><th>Experience</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for s in staff_members %}
+                    <tr>
+                        <td class="fw-medium">{{ s.user.first_name }} {{ s.user.last_name }}</td>
+                        <td><span class="badge bg-purple-soft text-purple">{{ s.get_role_display }}</span></td>
+                        <td>{{ s.specialization|default:"—" }}</td>
+                        <td>{{ s.phone|default:"—" }}</td>
+                        <td>{{ s.expertise_years }} yrs</td>
+                        <td>
+                            {% if s.availability == 'available' %}
+                            <span class="status-badge status-approved">Available</span>
+                            {% elif s.availability == 'on_leave' %}
+                            <span class="status-badge" style="background:#fef3c7;color:#92400e;">On Leave</span>
+                            {% else %}
+                            <span class="status-badge status-cancelled">Unavailable</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'toggle_staff_availability' s.pk %}" class="btn btn-sm btn-soft-purple" title="Toggle availability"><i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'edit_staff' s.pk %}" class="btn btn-sm btn-soft-purple" title="Edit"><i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'delete_staff' s.pk %}" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7">                            <div class="empty-state"><h5>No Staff Members</h5><p>Add your first staff member.</p></div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

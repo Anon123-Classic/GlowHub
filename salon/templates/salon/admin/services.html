@@ -1,0 +1,117 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load form_helpers %}
+{% block title %}Services - GlowHub Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h4 class="mb-1">Service Management</h4>
+        <p class="text-muted mb-0">Add, edit, or remove salon services</p>
+    </div>
+    <button class="btn btn-purple" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+        Add Service
+    </button>
+</div>
+
+<div class="card mb-4"><div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-auto">
+            <select name="category" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for key, label in categories %}
+                <option value="{{ key }}" {% if selected_category == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if selected_category %}
+        <div class="col-auto">
+            <a href="{% url 'admin_services' %}" class="btn btn-sm btn-soft-purple">Clear</a>
+        </div>
+        {% endif %}
+    </form>
+</div></div>
+
+{% regroup services by get_category_display as category_groups %}
+
+{% for group in category_groups %}
+<div class="mb-4">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <h5 class="fw-bold mb-0">{{ group.grouper }}</h5>
+        <span class="badge bg-purple-soft text-purple">{{ group.list|length }}</span>
+    </div>
+    <div class="row g-4">
+        {% for service in group.list %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card service-card h-100">
+                {% if service.image %}
+                <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
+                {% else %}
+                <div class="card-img-top d-flex align-items-center justify-content-center" style="background: var(--purple-soft); height:120px;">
+                    <span class="text-purple fw-bold">{{ service.name|first }}</span>
+                </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold mb-0">{{ service.name }}</h5>
+                        <span class="duration-badge">{{ service.duration }}m</span>
+                    </div>
+                    <p class="text-muted small flex-grow-1">{{ service.description|truncatewords:15 }}</p>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="price-tag">Ksh {{ service.price }}</span>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'edit_service' service.pk %}" class="btn btn-sm btn-soft-purple"><i class="bi bi-pencil"></i></a>
+                            <a href="{% url 'delete_service' service.pk %}" class="btn btn-sm btn-outline-danger" data-confirm="Delete {{ service.name }}?"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </div>
+                    {% if not service.is_active %}
+                    <span class="badge bg-warning mt-2 align-self-start">Inactive</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% empty %}
+<div class="col-12">
+    <div class="empty-state">
+        <h5>No Services Yet</h5>
+        <p>Add your first service to get started.</p>
+    </div>
+</div>
+{% endfor %}
+
+<div class="modal fade" id="addServiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add New Service</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" enctype="multipart/form-data" novalidate class="needs-validation">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">{% field form.name %}</div>
+                        <div class="col-md-3">{% field form.price %}</div>
+                        <div class="col-md-3">{% field form.duration %}</div>
+                        <div class="col-12">{% field form.description %}</div>
+                        <div class="col-md-4">{% field form.category %}</div>
+                        <div class="col-md-4">{% field form.image %}</div>
+                        <div class="col-md-4">{% field form.is_active %}</div>
+                    </div>
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3">
+                        {% for error in form.non_field_errors %}
+                        <p class="mb-0">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-purple">Save Service</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

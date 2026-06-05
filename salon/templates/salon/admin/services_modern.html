@@ -1,0 +1,253 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+
+{% block title %}Manage Services - GlowHub Admin{% endblock %}
+
+{% block content %}
+
+<style>
+    .admin-main {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .admin-sidebar {
+        width: 280px;
+        background: linear-gradient(180deg, #7C3AED 0%, #6D28D9 100%);
+        color: white;
+        padding: 2rem 1.5rem;
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        z-index: 900;
+    }
+
+    .admin-sidebar .sidebar-brand {
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-top: 60px;
+    }
+
+    .admin-sidebar .nav-item {
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        color: rgba(255, 255, 255, 0.8);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .admin-sidebar .nav-item:hover,
+    .admin-sidebar .nav-item.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        backdrop-filter: blur(10px);
+    }
+
+    .admin-content {
+        margin-left: 280px;
+        flex: 1;
+        background: var(--background);
+        padding: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .admin-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            width: 100%;
+            height: 100vh;
+            z-index: 1000;
+        }
+
+        .admin-sidebar.show {
+            transform: translateX(0);
+        }
+
+        .admin-content {
+            margin-left: 0;
+            padding: 1rem;
+        }
+    }
+</style>
+
+<div class="admin-main">
+    <!-- Sidebar -->
+    <nav class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-brand">
+            <span>GlowHub</span>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.8rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">Main</p>
+            <a href="{% url 'admin_dashboard' %}" class="nav-item">
+ Dashboard
+            </a>
+            <a href="{% url 'admin_services' %}" class="nav-item active">
+ Services
+            </a>
+            <a href="#" class="nav-item">
+ Appointments
+            </a>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <p style="font-size: 0.8rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">Management</p>
+            <a href="#" class="nav-item">
+ Customers
+            </a>
+            <a href="#" class="nav-item">
+ Staff
+            </a>
+            <a href="#" class="nav-item">
+ Payments
+            </a>
+        </div>
+
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1.5rem;">
+            <a href="{% url 'logout' %}" class="nav-item" style="color: #FCA5A5;">
+ Logout
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="admin-content">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-bold mb-1">Manage Services</h1>
+                <p class="text-muted">Create, edit, and manage your salon services</p>
+            </div>
+            <a href="{% url 'admin_services' %}" class="btn-primary-modern">
+                Add New Service
+            </a>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="card-modern mb-4" style="border-radius: 16px; padding: 1.5rem;">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" id="serviceSearch" class="form-control-modern" placeholder="Search by service name..." style="width: 100%;">
+                </div>
+                <div class="col-md-6">
+                    <select id="categoryFilter" class="form-control-modern" style="width: 100%;">
+                        <option value="">All Categories</option>
+                        <option value="hair">Hair</option>
+                        <option value="makeup">Makeup</option>
+                        <option value="nails">Nails</option>
+                        <option value="spa">Spa</option>
+                        <option value="barber">Barber</option>
+                        <option value="facial">Facial</option>
+                        <option value="waxing">Waxing</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services Table -->
+        <div class="card-modern" style="border-radius: 16px; overflow: hidden;">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle m-0">
+                    <thead style="background: #F9FAFB; border-bottom: 2px solid #E5E7EB;">
+                        <tr>
+                            <th style="font-weight: 700; color: #6B7280; padding: 1.25rem;">Service Name</th>
+                            <th style="font-weight: 700; color: #6B7280; padding: 1.25rem;">Category</th>
+                            <th style="font-weight: 700; color: #6B7280; padding: 1.25rem;">Price</th>
+                            <th style="font-weight: 700; color: #6B7280; padding: 1.25rem;">Duration</th>
+                            <th style="font-weight: 700; color: #6B7280; padding: 1.25rem;">Bookings</th>
+                            <th style="font-weight: 700; color: #6B7280; padding: 1.25rem;">Status</th>
+                            <th style="font-weight: 700; color: #6B7280; padding: 1.25rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for service in services %}
+                        <tr class="service-row" data-name="{{ service.name|lower }}" data-category="{{ service.get_category_display|lower }}">
+                            <td class="px-4 py-3">
+                                <strong>{{ service.name }}</strong>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="badge" style="border-radius: 50px; padding: 0.5rem 1rem; font-size: 0.85rem; background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+                                    {{ service.get_category_display }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <strong>KES {{ service.price }}</strong>
+                            </td>
+                            <td class="px-4 py-3">{{ service.duration }} min</td>
+                            <td class="px-4 py-3">
+                                <span class="badge bg-light text-dark" style="border-radius: 50px; padding: 0.5rem 1rem;">
+                                    {{ service.appointments.count }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="badge" style="border-radius: 50px; padding: 0.5rem 1rem; background: {% if service.is_active %}#D1FAE5; color: #065F46;{% else %}#FED7D7; color: #7C2D12;{% endif %}">
+                                    {% if service.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <a href="{% url 'edit_service' service.id %}" class="btn btn-sm" style="background: #F3E8FF; color: #7C3AED; border: none; border-radius: 8px; padding: 0.5rem 1rem; text-decoration: none; font-weight: 600;">
+Edit
+                                </a>
+                                <a href="{% url 'delete_service' service.id %}" class="btn btn-sm" style="background: #FED7D7; color: #7C2D12; border: none; border-radius: 8px; padding: 0.5rem 1rem; text-decoration: none; font-weight: 600;" onclick="return confirm('Are you sure you want to delete this service?');">
+Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <p class="mt-2">No services found. <a href="{% url 'admin_services' %}" class="text-gradient fw-bold">Create one now!</a></p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Search and filter functionality
+    const searchInput = document.getElementById('serviceSearch');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const serviceRows = document.querySelectorAll('.service-row');
+
+    function filterServices() {
+        const searchTerm = (searchInput?.value || '').toLowerCase();
+        const categoryTerm = (categoryFilter?.value || '').toLowerCase();
+
+        serviceRows.forEach(row => {
+            const name = row.dataset.name;
+            const category = row.dataset.category;
+            
+            const matchesSearch = name.includes(searchTerm);
+            const matchesCategory = categoryTerm === '' || category === categoryTerm;
+            
+            row.style.display = (matchesSearch && matchesCategory) ? '' : 'none';
+        });
+    }
+
+    searchInput?.addEventListener('input', filterServices);
+    categoryFilter?.addEventListener('change', filterServices);
+
+    // Mobile menu
+    document.querySelector('.navbar-toggler')?.addEventListener('click', function() {
+        document.getElementById('adminSidebar')?.classList.toggle('show');
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'salon/admin/base_admin.html' %}
+{% load static %}
+{% load form_helpers %}
+{% block title %}Edit Profile - GlowHub{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h4 class="mb-1">Edit Profile</h4>
+        <p class="text-muted mb-0">Update your personal information</p>
+    </div>
+    <a href="{% url 'staff_profile' %}" class="btn btn-soft-purple">
+        Back to Profile
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate class="needs-validation">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">{% field form.phone %}</div>
+                        <div class="col-md-6">{% field form.availability %}</div>
+                        <div class="col-12">{% field form.bio %}</div>
+                        <div class="col-12">
+                            {% field form.profile_photo %}
+                            {% if staff.profile_photo %}
+                            <div class="mt-2">
+                                <img src="{{ staff.profile_photo.url }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                                <small class="text-muted ms-2">Current photo</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 mt-3">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+                    <button type="submit" class="btn btn-purple mt-4">
+                        Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
