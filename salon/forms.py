@@ -9,7 +9,9 @@ import re
 
 
 PHONE_REGEX = r'^\+254\d{9}$'
-PHONE_ERROR = "Phone number must be in the format +254794760331"
+PHONE_ERROR = "Use format: +2547XXXXXXXX"
+PHONE_PLACEHOLDER = "+2547XXXXXXXX"
+PHONE_HELP_TEXT = "Example: +254712345678"
 
 
 def validate_phone(value):
@@ -27,9 +29,15 @@ class RegistrationForm(UserCreationForm):
     last_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
         'class': 'form-control', 'placeholder': 'Last name'
     }))
-    phone = forms.CharField(max_length=15, required=False, widget=forms.TextInput(attrs={
-        'class': 'form-control', 'placeholder': 'Phone number (optional)'
-    }), validators=[validate_phone])
+    phone = forms.CharField(
+        max_length=15,
+        required=False,
+        help_text=PHONE_HELP_TEXT,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 'placeholder': PHONE_PLACEHOLDER
+        }),
+        validators=[validate_phone],
+    )
 
     class Meta:
         model = User
@@ -308,10 +316,13 @@ class StaffForm(forms.ModelForm):
     class Meta:
         model = Staff
         fields = ['role', 'specialization', 'phone', 'availability', 'bio', 'expertise_years']
+        help_texts = {
+            'phone': PHONE_HELP_TEXT,
+        }
         widgets = {
             'role': forms.Select(attrs={'class': 'form-select'}),
             'specialization': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Bridal Hair, Beard Trimming'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+254...'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': PHONE_PLACEHOLDER}),
             'availability': forms.Select(attrs={'class': 'form-select'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Brief biography'}),
             'expertise_years': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
@@ -336,8 +347,11 @@ class StaffProfileForm(forms.ModelForm):
     class Meta:
         model = Staff
         fields = ['phone', 'availability', 'bio', 'profile_photo']
+        help_texts = {
+            'phone': PHONE_HELP_TEXT,
+        }
         widgets = {
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+254...'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': PHONE_PLACEHOLDER}),
             'availability': forms.Select(attrs={'class': 'form-select'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Tell us about yourself'}),
             'profile_photo': forms.FileInput(attrs={'class': 'form-control'}),
@@ -368,9 +382,15 @@ class CreateStaffForm(forms.Form):
     role = forms.ChoiceField(choices=Staff.ROLE_CHOICES, widget=forms.Select(attrs={
         'class': 'form-select'
     }))
-    phone = forms.CharField(max_length=15, required=False, widget=forms.TextInput(attrs={
-        'class': 'form-control', 'placeholder': '+254...'
-    }), validators=[validate_phone])
+    phone = forms.CharField(
+        max_length=15,
+        required=False,
+        help_text=PHONE_HELP_TEXT,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 'placeholder': PHONE_PLACEHOLDER
+        }),
+        validators=[validate_phone],
+    )
     specialization = forms.CharField(max_length=200, required=False, widget=forms.TextInput(attrs={
         'class': 'form-control', 'placeholder': 'e.g., Bridal Hair'
     }))
@@ -491,9 +511,15 @@ class WalkInForm(forms.Form):
     customer_name = forms.CharField(max_length=200, widget=forms.TextInput(attrs={
         'class': 'form-control', 'placeholder': 'Customer name'
     }))
-    customer_phone = forms.CharField(max_length=15, required=False, widget=forms.TextInput(attrs={
-        'class': 'form-control', 'placeholder': '+254...'
-    }), validators=[validate_phone])
+    customer_phone = forms.CharField(
+        max_length=15,
+        required=False,
+        help_text=PHONE_HELP_TEXT,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 'placeholder': PHONE_PLACEHOLDER
+        }),
+        validators=[validate_phone],
+    )
     customer_email = forms.EmailField(required=False, widget=forms.EmailInput(attrs={
         'class': 'form-control', 'placeholder': 'Email address'
     }))

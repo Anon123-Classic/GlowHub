@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
           showError(input, 'Enter a valid email address.');
           valid = false;
         } else if ((input.name === 'phone' || input.name === 'customer_phone') && input.value.trim() && !input.value.match(/^\+254\d{9}$/)) {
-          showError(input, 'Phone number must be in the format +254794760331');
+          showError(input, 'Use format: +2547XXXXXXXX');
           valid = false;
         } else if (input.name === 'password' || input.name === 'password1' || input.name === 'new_password1') {
           var pw = input.value;

@@ -227,6 +227,68 @@ GlowHub Management
         logger.error(f"Failed to send staff invite email to {user.email}: {e}")
 
 
+def get_allowed_roles_for_service(service):
+    from .models import Staff
+
+    if not service:
+        return []
+    return [role for role, category in Staff.SERVICE_CATEGORY_MAP.items() if category == service.category]
+
+
+def staff_matches_service(staff, service):
+    allowed_roles = get_allowed_roles_for_service(service)
+    return not allowed_roles or staff.role in allowed_roles
+
+
+def get_qualified_staff(service):
+    from .models import Staff
+
+    staff = Staff.objects.filter(availability='available').select_related('user')
+    allowed_roles = get_allowed_roles_for_service(service)
+    if allowed_roles:
+        staff = staff.filter(role__in=allowed_roles)
+    return staff
+
+
+def staff_has_overlap(staff, appointment_date, appointment_time, service, exclude_appointment_id=None):
+    from .models import Appointment
+
+    appointment_start, appointment_end = Appointment.get_interval(
+        appointment_date, appointment_time, service
+    )
+    if not appointment_start or not appointment_end:
+        return False
+
+    appointments = Appointment.objects.filter(
+        assigned_staff=staff,
+        date=appointment_date,
+        status__in=Appointment.ACTIVE_BOOKING_STATUSES,
+    ).select_related('service')
+    if exclude_appointment_id:
+        appointments = appointments.exclude(pk=exclude_appointment_id)
+
+    for appointment in appointments:
+        existing_start, existing_end = Appointment.get_interval(
+            appointment.date, appointment.time, appointment.service
+        )
+        if existing_start and existing_end and appointment_start < existing_end and appointment_end > existing_start:
+            return True
+    return False
+
+
+def get_available_staff_for_slot(service, appointment_date, appointment_time, exclude_appointment_id=None):
+    return [
+        staff for staff in get_qualified_staff(service)
+        if not staff_has_overlap(
+            staff,
+            appointment_date,
+            appointment_time,
+            service,
+            exclude_appointment_id=exclude_appointment_id,
+        )
+    ]
+
+
 def get_available_slots(service_date, service=None, exclude_appointment_id=None):
     from datetime import time, timedelta, datetime
     from .models import Appointment, BlockedTimeSlot

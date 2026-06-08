@@ -8,7 +8,14 @@ from django.utils import timezone
 
 from .forms import AppointmentForm, RescheduleForm
 from .models import Appointment, Service, Staff
-from .utils import get_available_slots
+from .utils import (
+    get_allowed_roles_for_service,
+    get_available_slots,
+    get_available_staff_for_slot,
+    get_qualified_staff,
+    staff_has_overlap,
+    staff_matches_service,
+)
 
 
 class BookingDurationValidationTests(TestCase):
@@ -466,3 +473,138 @@ class WalkInStaffAssignmentTests(TestCase):
             assigned_staff__isnull=True
         ).exclude(status='cancelled').count()
         self.assertEqual(unassigned_count, 0)
+
+class StaffSchedulingHelperTests(TestCase):
+    def setUp(self):
+        self.customer = User.objects.create_user(
+            username='helper_customer',
+            email='helpercustomer@example.com',
+            password='password123',
+        )
+        self.hair_service = Service.objects.create(
+            name='Helper Hair Service',
+            description='Hair service',
+            price=2000,
+            duration=60,
+            category='hair',
+            is_active=True,
+        )
+        self.short_hair_service = Service.objects.create(
+            name='Helper Short Hair Service',
+            description='Short hair service',
+            price=1000,
+            duration=30,
+            category='hair',
+            is_active=True,
+        )
+        self.nail_service = Service.objects.create(
+            name='Helper Nail Service',
+            description='Nail service',
+            price=1200,
+            duration=30,
+            category='nails',
+            is_active=True,
+        )
+        self.booking_date = timezone.now().date() + timedelta(days=1)
+        self.hair_staff_user = User.objects.create_user(
+            username='helper_hair_staff',
+            email='helperhair@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        self.hair_staff = Staff.objects.create(
+            user=self.hair_staff_user,
+            role='hair_stylist',
+            availability='available',
+        )
+        self.unavailable_hair_user = User.objects.create_user(
+            username='helper_unavailable_hair_staff',
+            email='helperunavailable@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        self.unavailable_hair_staff = Staff.objects.create(
+            user=self.unavailable_hair_user,
+            role='hair_stylist',
+            availability='unavailable',
+        )
+        self.nail_staff_user = User.objects.create_user(
+            username='helper_nail_staff',
+            email='helpernail@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        self.nail_staff = Staff.objects.create(
+            user=self.nail_staff_user,
+            role='nail_technician',
+            availability='available',
+        )
+
+    def test_allowed_roles_and_staff_match_service_category(self):
+        self.assertEqual(get_allowed_roles_for_service(self.hair_service), ['hair_stylist'])
+        self.assertTrue(staff_matches_service(self.hair_staff, self.hair_service))
+        self.assertFalse(staff_matches_service(self.nail_staff, self.hair_service))
+
+    def test_get_qualified_staff_includes_available_matching_staff_only(self):
+        qualified_staff = list(get_qualified_staff(self.hair_service))
+
+        self.assertIn(self.hair_staff, qualified_staff)
+        self.assertNotIn(self.unavailable_hair_staff, qualified_staff)
+        self.assertNotIn(self.nail_staff, qualified_staff)
+
+    def test_staff_has_overlap_for_overlapping_active_assigned_appointment(self):
+        Appointment.objects.create(
+            user=self.customer,
+            service=self.hair_service,
+            assigned_staff=self.hair_staff,
+            staff=self.hair_staff.user,
+            date=self.booking_date,
+            time=time(9, 0),
+            status='approved',
+        )
+
+        self.assertTrue(staff_has_overlap(
+            self.hair_staff,
+            self.booking_date,
+            time(9, 30),
+            self.short_hair_service,
+        ))
+
+    def test_staff_has_overlap_allows_back_to_back_appointments(self):
+        Appointment.objects.create(
+            user=self.customer,
+            service=self.short_hair_service,
+            assigned_staff=self.hair_staff,
+            staff=self.hair_staff.user,
+            date=self.booking_date,
+            time=time(9, 0),
+            status='approved',
+        )
+
+        self.assertFalse(staff_has_overlap(
+            self.hair_staff,
+            self.booking_date,
+            time(9, 30),
+            self.short_hair_service,
+        ))
+
+    def test_get_available_staff_for_slot_returns_qualified_non_overlapping_staff(self):
+        Appointment.objects.create(
+            user=self.customer,
+            service=self.hair_service,
+            assigned_staff=self.hair_staff,
+            staff=self.hair_staff.user,
+            date=self.booking_date,
+            time=time(9, 0),
+            status='approved',
+        )
+
+        available_staff = get_available_staff_for_slot(
+            self.hair_service,
+            self.booking_date,
+            time(9, 30),
+        )
+
+        self.assertNotIn(self.hair_staff, available_staff)
+        self.assertNotIn(self.unavailable_hair_staff, available_staff)
+        self.assertNotIn(self.nail_staff, available_staff)
