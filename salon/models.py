@@ -216,6 +216,24 @@ class Appointment(models.Model):
 
     class Meta:
         ordering = ['-date', '-time']
+        indexes = [
+            models.Index(
+                fields=['user', 'status', 'date'],
+                name='apt_user_status_date_idx',
+            ),
+            models.Index(
+                fields=['user', 'date', 'time'],
+                name='apt_user_date_time_idx',
+            ),
+            models.Index(
+                fields=['date', 'status'],
+                name='apt_date_status_idx',
+            ),
+            models.Index(
+                fields=['assigned_staff', 'date', 'status'],
+                name='apt_staff_date_status_idx',
+            ),
+        ]
 
 class BlockedTimeSlot(models.Model):
     date = models.DateField()
@@ -226,6 +244,11 @@ class BlockedTimeSlot(models.Model):
 
     def __str__(self):
         return f"{self.date} {self.start_time}-{self.end_time}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['date'], name='blocked_date_idx'),
+        ]
 
 class NotificationLog(models.Model):
     NOTIFICATION_TYPES = [
@@ -239,14 +262,25 @@ class NotificationLog(models.Model):
     notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
     recipient_email = models.EmailField()
     status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
         ('sent', 'Sent'),
         ('failed', 'Failed'),
-    ], default='sent')
+    ], default='pending')
     error_log = models.TextField(blank=True, null=True)
-    sent_at = models.DateTimeField(auto_now_add=True)
+    attempts = models.PositiveIntegerField(default=0)
+    available_at = models.DateTimeField(default=timezone.now)
+    processing_started_at = models.DateTimeField(blank=True, null=True)
+    queued_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.notification_type} - {self.recipient_email} - {self.status}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['status', 'available_at'], name='notification_queue_idx'),
+        ]
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')

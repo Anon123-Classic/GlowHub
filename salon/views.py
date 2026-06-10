@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from django.http import JsonResponse
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 from .models import Service, Appointment, NotificationLog, BlockedTimeSlot, Staff, Payment, Expense, Profile
 from .forms import RegistrationForm, LoginForm, AppointmentForm, ServiceForm, BlockTimeSlotForm, RescheduleForm, StaffForm, CreateStaffForm, StaffProfileForm, ProcessPaymentForm, ExpenseForm, WalkInForm
-from .utils import send_booking_confirmation, send_status_update, send_staff_invite_email, send_payment_confirmation, get_available_slots, generate_walkin_username
+from .utils import queue_booking_confirmation, queue_payment_confirmation, send_status_update, send_staff_invite_email, send_payment_confirmation, get_available_slots, generate_walkin_username
 
 def is_admin(user):
     """Pure admin = is_staff but no staff_profile"""
@@ -124,25 +125,23 @@ def logout_view(request):
 
 @login_required
 def customer_dashboard(request):
-    appointments = Appointment.objects.filter(user=request.user)
-    services = Service.objects.filter(is_active=True)
+    user_appointments = Appointment.objects.filter(user=request.user)
+    stats = user_appointments.aggregate(
+        total=Count('pk'),
+        pending=Count('pk', filter=Q(status='pending')),
+        approved=Count('pk', filter=Q(status='approved')),
+        completed=Count('pk', filter=Q(status='completed')),
+        cancelled=Count('pk', filter=Q(status='cancelled')),
+    )
 
-    stats = {
-        'total': appointments.count(),
-        'pending': appointments.filter(status='pending').count(),
-        'approved': appointments.filter(status='approved').count(),
-        'completed': appointments.filter(status='completed').count(),
-        'cancelled': appointments.filter(status='cancelled').count(),
-    }
-
-    upcoming = appointments.filter(
+    appointments = user_appointments.select_related('service', 'staff')
+    upcoming = user_appointments.select_related('service', 'staff').filter(
         Q(status='pending') | Q(status='approved'),
         date__gte=timezone.now().date()
     ).order_by('date', 'time')[:5]
 
     return render(request, 'salon/customer/dashboard.html', {
         'appointments': appointments,
-        'services': services,
         'stats': stats,
         'upcoming': upcoming,
     })
@@ -167,9 +166,10 @@ def book_appointment(request):
         form.user = request.user
         form.instance.user = request.user
         if form.is_valid():
-            appointment = form.save(commit=False)
-            appointment.save()
-            send_booking_confirmation(appointment)
+            with transaction.atomic():
+                appointment = form.save(commit=False)
+                appointment.save()
+                queue_booking_confirmation(appointment)
             messages.success(request, 'Appointment booked successfully! Check your email for confirmation.')
             return redirect('customer_dashboard')
         else:
@@ -941,7 +941,14 @@ def cashier_walkin(request):
 @login_required
 @user_passes_test(is_cashier)
 def process_payment(request, pk):
-    appointment = get_object_or_404(Appointment, pk=pk)
+    appointment = get_object_or_404(
+        Appointment.objects.select_related(
+            'service',
+            'user',
+            'assigned_staff__user',
+        ),
+        pk=pk,
+    )
     
     if appointment.payment_status == 'paid':
         messages.warning(request, 'Appointment already paid.')
@@ -950,15 +957,16 @@ def process_payment(request, pk):
     if request.method == 'POST':
         form = ProcessPaymentForm(request.POST)
         if form.is_valid():
-            payment = Payment.objects.create(
-                appointment=appointment,
-                amount=appointment.service.price,
-                payment_method='cash',
-                received_by=request.user,
-                notes=form.cleaned_data.get('notes', ''),
-            )
-            payment.mark_as_paid(received_by=request.user)
-            send_payment_confirmation(appointment)
+            with transaction.atomic():
+                payment = Payment.objects.create(
+                    appointment=appointment,
+                    amount=appointment.service.price,
+                    payment_method='cash',
+                    received_by=request.user,
+                    notes=form.cleaned_data.get('notes', ''),
+                )
+                payment.mark_as_paid(received_by=request.user)
+                queue_payment_confirmation(appointment)
             messages.success(request, f'Cash payment of Ksh {appointment.service.price} recorded successfully.')
             return redirect('cashier_receipt', pk=payment.pk)
     else:
@@ -974,7 +982,15 @@ def process_payment(request, pk):
 @user_passes_test(is_cashier)
 def cashier_receipt(request, pk):
     """Display receipt after successful payment"""
-    payment = get_object_or_404(Payment, pk=pk, payment_status='paid')
+    payment = get_object_or_404(
+        Payment.objects.select_related(
+            'appointment__user',
+            'appointment__service',
+            'appointment__assigned_staff__user',
+        ),
+        pk=pk,
+        payment_status='paid',
+    )
     return render(request, 'salon/cashier/receipt.html', {
         'payment': payment,
         'appointment': payment.appointment,

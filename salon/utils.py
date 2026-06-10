@@ -29,11 +29,38 @@ def _log_notification(appointment, notification_type, recipient, status, error_l
         notification_type=notification_type,
         recipient_email=recipient,
         status=status,
-        error_log=error_log
+        error_log=error_log,
+        sent_at=timezone.now() if status == 'sent' else None,
     )
 
 
-def send_booking_confirmation(appointment):
+def queue_booking_confirmation(appointment):
+    notification, _ = NotificationLog.objects.get_or_create(
+        appointment=appointment,
+        notification_type='booking_confirmation',
+        status__in=['pending', 'processing', 'sent'],
+        defaults={
+            'recipient_email': appointment.user.email,
+            'status': 'pending',
+        },
+    )
+    return notification
+
+
+def queue_payment_confirmation(appointment):
+    notification, _ = NotificationLog.objects.get_or_create(
+        appointment=appointment,
+        notification_type='payment_successful',
+        status__in=['pending', 'processing', 'sent'],
+        defaults={
+            'recipient_email': appointment.user.email,
+            'status': 'pending',
+        },
+    )
+    return notification
+
+
+def send_booking_confirmation(appointment, notification=None):
     subject = f"Booking Confirmation - {appointment.service.name}"
     message = f"""
 Hello {appointment.user.username}, your appointment has been booked successfully.
@@ -67,10 +94,36 @@ GlowHub Management
     recipient = appointment.user.email
     try:
         send_mail(subject, message, settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL, [recipient], html_message=html_message, fail_silently=False)
-        _log_notification(appointment, 'booking_confirmation', recipient, 'sent')
+        if notification:
+            notification.status = 'sent'
+            notification.recipient_email = recipient
+            notification.error_log = None
+            notification.processing_started_at = None
+            notification.sent_at = timezone.now()
+            notification.save(update_fields=[
+                'status',
+                'recipient_email',
+                'error_log',
+                'processing_started_at',
+                'sent_at',
+            ])
+        else:
+            _log_notification(appointment, 'booking_confirmation', recipient, 'sent')
+        return True
     except Exception as e:
         logger.error(f"Failed to send booking confirmation: {e}")
-        _log_notification(appointment, 'booking_confirmation', recipient, 'failed', str(e))
+        if notification:
+            notification.status = 'failed'
+            notification.error_log = str(e)
+            notification.processing_started_at = None
+            notification.save(update_fields=[
+                'status',
+                'error_log',
+                'processing_started_at',
+            ])
+        else:
+            _log_notification(appointment, 'booking_confirmation', recipient, 'failed', str(e))
+        return False
 
 
 def send_status_update(appointment):
@@ -149,7 +202,7 @@ GlowHub Management
         _log_notification(appointment, 'reminder', recipient, 'failed', str(e))
 
 
-def send_payment_confirmation(appointment):
+def send_payment_confirmation(appointment, notification=None):
     subject = f"Payment Confirmed - {appointment.service.name}"
     message = f"""
 Dear {appointment.user.first_name},
@@ -183,10 +236,36 @@ GlowHub Management
     recipient = appointment.user.email
     try:
         send_mail(subject, message, settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL, [recipient], html_message=html_message, fail_silently=False)
-        _log_notification(appointment, 'payment_successful', recipient, 'sent')
+        if notification:
+            notification.status = 'sent'
+            notification.recipient_email = recipient
+            notification.error_log = None
+            notification.processing_started_at = None
+            notification.sent_at = timezone.now()
+            notification.save(update_fields=[
+                'status',
+                'recipient_email',
+                'error_log',
+                'processing_started_at',
+                'sent_at',
+            ])
+        else:
+            _log_notification(appointment, 'payment_successful', recipient, 'sent')
+        return True
     except Exception as e:
         logger.error(f"Failed to send payment confirmation: {e}")
-        _log_notification(appointment, 'payment_successful', recipient, 'failed', str(e))
+        if notification:
+            notification.status = 'failed'
+            notification.error_log = str(e)
+            notification.processing_started_at = None
+            notification.save(update_fields=[
+                'status',
+                'error_log',
+                'processing_started_at',
+            ])
+        else:
+            _log_notification(appointment, 'payment_successful', recipient, 'failed', str(e))
+        return False
 
 
 def send_staff_invite_email(user, password):

@@ -1,13 +1,16 @@
 from datetime import time, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core import mail
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from .forms import AppointmentForm, RescheduleForm
-from .models import Appointment, Service, Staff
+from .models import Appointment, NotificationLog, Payment, Service, Staff
 from .utils import (
     get_allowed_roles_for_service,
     get_available_slots,
@@ -608,3 +611,299 @@ class StaffSchedulingHelperTests(TestCase):
         self.assertNotIn(self.hair_staff, available_staff)
         self.assertNotIn(self.unavailable_hair_staff, available_staff)
         self.assertNotIn(self.nail_staff, available_staff)
+
+
+class BookingNotificationQueueTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='queued_customer',
+            email='queued@example.com',
+            password='password123',
+            first_name='Queued',
+        )
+        self.service = Service.objects.create(
+            name='Queued Service',
+            description='Service with asynchronous confirmation',
+            price=1200,
+            duration=30,
+            category='hair',
+            is_active=True,
+        )
+        self.booking_date = timezone.localdate() + timedelta(days=7)
+        self.client.force_login(self.user)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_booking_queues_confirmation_without_sending_email(self):
+        with patch('salon.utils.send_mail') as mocked_send_mail:
+            response = self.client.post(reverse('book_appointment'), {
+                'service': self.service.pk,
+                'date': self.booking_date.isoformat(),
+                'time': '10:00',
+                'notes': '',
+            })
+
+        mocked_send_mail.assert_not_called()
+
+        self.assertRedirects(
+            response,
+            reverse('customer_dashboard'),
+            fetch_redirect_response=False,
+        )
+        appointment = Appointment.objects.get(user=self.user)
+        notification = NotificationLog.objects.get(appointment=appointment)
+        self.assertEqual(notification.status, 'pending')
+        self.assertEqual(notification.notification_type, 'booking_confirmation')
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_worker_sends_queued_booking_confirmation(self):
+        appointment = Appointment.objects.create(
+            user=self.user,
+            service=self.service,
+            date=self.booking_date,
+            time=time(10, 0),
+        )
+        notification = NotificationLog.objects.create(
+            appointment=appointment,
+            notification_type='booking_confirmation',
+            recipient_email=self.user.email,
+            status='pending',
+        )
+
+        call_command('process_notifications')
+
+        notification.refresh_from_db()
+        self.assertEqual(notification.status, 'sent')
+        self.assertEqual(notification.attempts, 1)
+        self.assertIsNotNone(notification.sent_at)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+
+
+class CustomerDashboardQueryTests(TestCase):
+    def setUp(self):
+        self.customer = User.objects.create_user(
+            username='dashboard_customer',
+            email='dashboard@example.com',
+            password='password123',
+        )
+        self.staff_user = User.objects.create_user(
+            username='dashboard_staff',
+            email='dashboardstaff@example.com',
+            password='password123',
+            first_name='Dashboard Staff',
+            is_staff=True,
+        )
+        self.service = Service.objects.create(
+            name='Dashboard Service',
+            description='Dashboard query test service',
+            price=1500,
+            duration=30,
+            category='hair',
+            is_active=True,
+        )
+        self.client.force_login(self.customer)
+
+        statuses = ['pending', 'approved', 'completed', 'cancelled']
+        for index, status in enumerate(statuses, start=1):
+            Appointment.objects.create(
+                user=self.customer,
+                service=self.service,
+                staff=self.staff_user,
+                date=timezone.localdate() + timedelta(days=index),
+                time=time(9 + index, 0),
+                status=status,
+            )
+
+    def test_dashboard_uses_constant_query_count_with_related_objects(self):
+        with self.assertNumQueries(5):
+            response = self.client.get(reverse('customer_dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.service.name)
+        self.assertContains(response, self.staff_user.first_name)
+        self.assertEqual(response.context['stats'], {
+            'total': 4,
+            'pending': 1,
+            'approved': 1,
+            'completed': 1,
+            'cancelled': 1,
+        })
+
+
+class PaymentNotificationQueueTests(TestCase):
+    def setUp(self):
+        self.cashier = User.objects.create_user(
+            username='payment_cashier',
+            email='cashier@example.com',
+            password='password123',
+            is_staff=True,
+        )
+        self.customer = User.objects.create_user(
+            username='payment_customer',
+            email='paymentcustomer@example.com',
+            password='password123',
+            first_name='Payment Customer',
+        )
+        self.staff_user = User.objects.create_user(
+            username='payment_staff',
+            email='paymentstaff@example.com',
+            password='password123',
+            first_name='Payment Staff',
+            is_staff=True,
+        )
+        self.staff = Staff.objects.create(
+            user=self.staff_user,
+            role='hair_stylist',
+            availability='available',
+        )
+        self.service = Service.objects.create(
+            name='Payment Service',
+            description='Payment flow test service',
+            price=2500,
+            duration=60,
+            category='hair',
+            is_active=True,
+        )
+        self.appointment = Appointment.objects.create(
+            user=self.customer,
+            service=self.service,
+            staff=self.staff_user,
+            assigned_staff=self.staff,
+            date=timezone.localdate(),
+            time=time(11, 0),
+            status='awaiting_payment',
+            payment_status='unpaid',
+        )
+        self.client.force_login(self.cashier)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_process_payment_queues_notification_without_sending_email(self):
+        with patch('salon.utils.send_mail') as mocked_send_mail:
+            response = self.client.post(
+                reverse('process_payment', args=[self.appointment.pk]),
+                {'payment_method': 'cash', 'notes': 'Paid at till'},
+            )
+
+        mocked_send_mail.assert_not_called()
+        payment = Payment.objects.get(appointment=self.appointment)
+        self.assertRedirects(
+            response,
+            reverse('cashier_receipt', args=[payment.pk]),
+            fetch_redirect_response=False,
+        )
+        payment.refresh_from_db()
+        self.appointment.refresh_from_db()
+        notification = NotificationLog.objects.get(
+            appointment=self.appointment,
+            notification_type='payment_successful',
+        )
+        self.assertEqual(payment.payment_status, 'paid')
+        self.assertIsNotNone(payment.receipt_number)
+        self.assertEqual(payment.received_by, self.cashier)
+        self.assertEqual(self.appointment.payment_status, 'paid')
+        self.assertEqual(self.appointment.status, 'completed')
+        self.assertEqual(notification.status, 'pending')
+        self.assertEqual(notification.recipient_email, self.customer.email)
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_worker_sends_queued_payment_confirmation(self):
+        notification = NotificationLog.objects.create(
+            appointment=self.appointment,
+            notification_type='payment_successful',
+            recipient_email=self.customer.email,
+            status='pending',
+        )
+
+        call_command('process_notifications')
+
+        notification.refresh_from_db()
+        self.assertEqual(notification.status, 'sent')
+        self.assertEqual(notification.attempts, 1)
+        self.assertIsNotNone(notification.sent_at)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.customer.email])
+        self.assertEqual(
+            mail.outbox[0].subject,
+            f'Payment Confirmed - {self.service.name}',
+        )
+        self.assertIn('Amount: Ksh 2500', mail.outbox[0].body)
+
+    def test_failed_payment_notification_is_retried(self):
+        notification = NotificationLog.objects.create(
+            appointment=self.appointment,
+            notification_type='payment_successful',
+            recipient_email=self.customer.email,
+            status='pending',
+        )
+
+        with patch('salon.utils.send_mail', side_effect=RuntimeError('SMTP unavailable')):
+            call_command('process_notifications')
+
+        notification.refresh_from_db()
+        self.assertEqual(notification.status, 'failed')
+        self.assertEqual(notification.attempts, 1)
+        self.assertIn('SMTP unavailable', notification.error_log)
+        self.assertGreater(notification.available_at, timezone.now())
+
+        NotificationLog.objects.filter(pk=notification.pk).update(
+            available_at=timezone.now()
+        )
+        with patch('salon.utils.send_mail', return_value=1):
+            call_command('process_notifications')
+
+        notification.refresh_from_db()
+        self.assertEqual(notification.status, 'sent')
+        self.assertEqual(notification.attempts, 2)
+        self.assertIsNone(notification.error_log)
+
+    def test_already_paid_appointment_does_not_create_another_payment(self):
+        payment = Payment.objects.create(
+            appointment=self.appointment,
+            amount=self.service.price,
+            payment_method='cash',
+            payment_status='paid',
+            received_by=self.cashier,
+            payment_date=timezone.now(),
+        )
+        self.appointment.payment_status = 'paid'
+        self.appointment.status = 'completed'
+        self.appointment.save(update_fields=['payment_status', 'status'])
+
+        response = self.client.post(
+            reverse('process_payment', args=[self.appointment.pk]),
+            {'payment_method': 'cash', 'notes': ''},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('cashier_dashboard'),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(Payment.objects.filter(appointment=self.appointment).count(), 1)
+        self.assertEqual(Payment.objects.get(appointment=self.appointment), payment)
+        self.assertFalse(NotificationLog.objects.filter(
+            appointment=self.appointment,
+            notification_type='payment_successful',
+        ).exists())
+
+    def test_receipt_renders_with_constant_related_object_query_count(self):
+        payment = Payment.objects.create(
+            appointment=self.appointment,
+            amount=self.service.price,
+            payment_method='cash',
+            payment_status='paid',
+            received_by=self.cashier,
+            payment_date=timezone.now(),
+        )
+        payment.mark_as_paid(received_by=self.cashier)
+
+        with self.assertNumQueries(7):
+            response = self.client.get(reverse('cashier_receipt', args=[payment.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, payment.receipt_number)
+        self.assertContains(response, self.customer.first_name)
+        self.assertContains(response, self.service.name)
+        self.assertContains(response, self.staff_user.first_name)
